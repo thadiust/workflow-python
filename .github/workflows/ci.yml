@@ -1,0 +1,64 @@
+name: "Python Security Pipeline"
+
+on:
+  workflow_call:
+    inputs:
+      working_directory:
+        description: "Directory containing the Python project to scan"
+        required: false
+        type: string
+        default: "."
+      requirements_file:
+        description: "Requirements file path relative to working_directory"
+        required: false
+        type: string
+        default: "requirements.txt"
+      python_version:
+        description: "Python version for the scan action"
+        required: false
+        type: string
+        default: "3.11"
+      fail_on_vuln:
+        description: "Fail the workflow when vulnerabilities are found"
+        required: false
+        type: boolean
+        default: true
+  workflow_dispatch:
+    inputs:
+      working_directory:
+        description: "Directory containing the Python project to scan"
+        required: false
+        type: string
+        default: "."
+      requirements_file:
+        description: "Requirements file path relative to working_directory"
+        required: false
+        type: string
+        default: "requirements.txt"
+      python_version:
+        description: "Python version for the scan action"
+        required: false
+        type: string
+        default: "3.11"
+      fail_on_vuln:
+        description: "Fail the workflow when vulnerabilities are found"
+        required: false
+        type: boolean
+        default: true
+
+jobs:
+  security-scan:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Run pip-audit scan
+        id: pip_audit
+        uses: thadiust/pip-audit-scan-action@main
+        with:
+          python_version: ${{ inputs.python_version }}
+          working_directory: ${{ inputs.working_directory }}
+          requirements_file: ${{ inputs.requirements_file }}
+          fail_on_vuln: ${{ inputs.fail_on_vuln }}

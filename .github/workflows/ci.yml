@@ -47,7 +47,7 @@ on:
         default: true
 
 jobs:
-  security-scan:
+  pip-audit-scan:
     runs-on: ubuntu-latest
 
     steps:

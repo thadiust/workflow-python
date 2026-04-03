@@ -14,6 +14,7 @@ All inputs are optional; defaults assume `requirements.txt` at the repository ro
 | `fail_on_vuln` | boolean | `true` | If `true`, the pip-audit job fails when vulnerabilities are found. |
 | `run_pip_audit_scan` | boolean | `true` | If `false`, the pip-audit job is skipped. |
 | `run_bandit` | boolean | `true` | If `false`, the Bandit job is skipped. |
+| `bandit_config` | string | *(empty)* | Optional path to a Bandit config file relative to `working_directory` (for example `bandit.yaml` to exclude test fixtures). |
 
 ## Example: call from another repository
 
@@ -34,6 +35,7 @@ jobs:
       fail_on_vuln: true
       run_pip_audit_scan: true
       run_bandit: true
+      bandit_config: ""
 ```
 
 You can also run [`.github/workflows/ci.yml`](.github/workflows/ci.yml) manually via **workflow_dispatch** from the Actions tab of this repo. For stable behavior, pin `@main` to a commit SHA or tag instead of a branch.

@@ -35,7 +35,6 @@ jobs:
       fail_on_vuln: true
       run_pip_audit_scan: true
       run_bandit: true
-      bandit_config: ""
 ```
 
 You can also run [`.github/workflows/ci.yml`](.github/workflows/ci.yml) manually via **workflow_dispatch** from the Actions tab of this repo. For stable behavior, pin `@main` to a commit SHA or tag instead of a branch.

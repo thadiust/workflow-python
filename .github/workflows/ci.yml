@@ -14,12 +14,22 @@ on:
         type: string
         default: "requirements.txt"
       python_version:
-        description: "Python version for the scan action"
+        description: "Python version for the scan jobs"
         required: false
         type: string
         default: "3.11"
       fail_on_vuln:
-        description: "Fail the workflow when vulnerabilities are found"
+        description: "Fail the pip-audit job when vulnerabilities are found"
+        required: false
+        type: boolean
+        default: true
+      run_pip_audit_scan:
+        description: "Whether to run the pip-audit dependency scan job"
+        required: false
+        type: boolean
+        default: true
+      run_bandit:
+        description: "Whether to run the Bandit SAST job"
         required: false
         type: boolean
         default: true
@@ -36,18 +46,29 @@ on:
         type: string
         default: "requirements.txt"
       python_version:
-        description: "Python version for the scan action"
+        description: "Python version for the scan jobs"
         required: false
         type: string
         default: "3.11"
       fail_on_vuln:
-        description: "Fail the workflow when vulnerabilities are found"
+        description: "Fail the pip-audit job when vulnerabilities are found"
+        required: false
+        type: boolean
+        default: true
+      run_pip_audit_scan:
+        description: "Whether to run the pip-audit dependency scan job"
+        required: false
+        type: boolean
+        default: true
+      run_bandit:
+        description: "Whether to run the Bandit SAST job"
         required: false
         type: boolean
         default: true
 
 jobs:
   pip-audit-scan:
+    if: ${{ inputs.run_pip_audit_scan }}
     runs-on: ubuntu-latest
 
     steps:
@@ -62,3 +83,20 @@ jobs:
           working_directory: ${{ inputs.working_directory }}
           requirements_file: ${{ inputs.requirements_file }}
           fail_on_vuln: ${{ inputs.fail_on_vuln }}
+
+  bandit-scan:
+    if: ${{ inputs.run_bandit }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Run Bandit SAST
+        id: bandit
+        uses: thadiust/sast-bandit@main
+        with:
+          python_version: ${{ inputs.python_version }}
+          working_directory: ${{ inputs.working_directory }}
+          targets: "."
+          fail_on_findings: true

@@ -14,7 +14,7 @@ All inputs are optional; defaults assume `requirements.txt` at the repository ro
 | `fail_on_vuln` | boolean | `true` | If `true`, the pip-audit job fails when vulnerabilities are found. |
 | `run_pip_audit_scan` | boolean | `true` | If `false`, the pip-audit job is skipped. |
 | `run_bandit` | boolean | `true` | If `false`, the Bandit job is skipped. |
-| `bandit_config` | string | *(empty)* | Optional path to a Bandit config file relative to `working_directory` (for example `bandit.yaml` to exclude test fixtures). |
+| `bandit_config` | string | *(empty)* | Optional path to a Bandit config file relative to `working_directory` (for example `bandit.yaml`). |
 
 ## Example: call from another repository
 

@@ -38,6 +38,11 @@ on:
         required: false
         type: string
         default: ""
+      bandit_minimum_severity:
+        description: "Lowest Bandit severity to report and count toward fail_on_findings (all, low, medium, high). Use medium to ignore low-only issues."
+        required: false
+        type: string
+        default: "all"
   workflow_dispatch:
     inputs:
       working_directory:
@@ -75,6 +80,11 @@ on:
         required: false
         type: string
         default: ""
+      bandit_minimum_severity:
+        description: "Lowest Bandit severity to report and count toward fail_on_findings (all, low, medium, high). Use medium to ignore low-only issues."
+        required: false
+        type: string
+        default: "all"
 
 jobs:
   pip-audit-scan:
@@ -111,3 +121,4 @@ jobs:
           targets: "."
           fail_on_findings: true
           bandit_config: ${{ inputs.bandit_config }}
+          minimum_severity: ${{ inputs.bandit_minimum_severity }}

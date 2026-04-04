@@ -15,6 +15,7 @@ All inputs are optional; defaults assume `requirements.txt` at the repository ro
 | `run_pip_audit_scan` | boolean | `true` | If `false`, the pip-audit job is skipped. |
 | `run_bandit` | boolean | `true` | If `false`, the Bandit job is skipped. |
 | `bandit_config` | string | *(empty)* | Optional path to a Bandit config file relative to `working_directory` (for example `bandit.yaml`). |
+| `bandit_minimum_severity` | string | `all` | Bandit severity floor: `all`, `low`, `medium`, or `high`. Findings below this level are omitted from the report and do not fail the job. `medium` blocks on medium and high only. |
 
 ## Example: call from another repository
 

@@ -23,6 +23,11 @@ on:
         required: false
         type: boolean
         default: true
+      run_gitleaks:
+        description: "Whether to run the Gitleaks secrets scan job (runs first when enabled)"
+        required: false
+        type: boolean
+        default: true
       run_pip_audit_scan:
         description: "Whether to run the pip-audit dependency scan job"
         required: false
@@ -65,6 +70,11 @@ on:
         required: false
         type: boolean
         default: true
+      run_gitleaks:
+        description: "Whether to run the Gitleaks secrets scan job (runs first when enabled)"
+        required: false
+        type: boolean
+        default: true
       run_pip_audit_scan:
         description: "Whether to run the pip-audit dependency scan job"
         required: false
@@ -87,25 +97,28 @@ on:
         default: "all"
 
 jobs:
-  pip-audit-scan:
-    if: ${{ inputs.run_pip_audit_scan }}
+  # Gitleaks first; Bandit and pip-audit run in parallel after it (each only needs gitleaks-scan).
+  gitleaks-scan:
+    if: ${{ inputs.run_gitleaks }}
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
-
-      - name: Run pip-audit scan
-        id: pip_audit
-        uses: thadiust/pip-audit-scan-action@main
         with:
-          python_version: ${{ inputs.python_version }}
+          fetch-depth: 0
+
+      - name: Run Gitleaks
+        id: gitleaks
+        uses: thadiust/secrets-gitleaks@main
+        with:
           working_directory: ${{ inputs.working_directory }}
-          requirements_file: ${{ inputs.requirements_file }}
-          fail_on_vuln: ${{ inputs.fail_on_vuln }}
+          fail_on_findings: true
 
   bandit-scan:
-    if: ${{ inputs.run_bandit }}
+    needs:
+      - gitleaks-scan
+    if: ${{ inputs.run_bandit && !cancelled() && (needs['gitleaks-scan'].result == 'success' || needs['gitleaks-scan'].result == 'skipped') }}
     runs-on: ubuntu-latest
 
     steps:
@@ -122,3 +135,22 @@ jobs:
           fail_on_findings: true
           bandit_config: ${{ inputs.bandit_config }}
           minimum_severity: ${{ inputs.bandit_minimum_severity }}
+
+  pip-audit-scan:
+    needs:
+      - gitleaks-scan
+    if: ${{ inputs.run_pip_audit_scan && !cancelled() && (needs['gitleaks-scan'].result == 'success' || needs['gitleaks-scan'].result == 'skipped') }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Run pip-audit scan
+        id: pip_audit
+        uses: thadiust/pip-audit-scan-action@main
+        with:
+          python_version: ${{ inputs.python_version }}
+          working_directory: ${{ inputs.working_directory }}
+          requirements_file: ${{ inputs.requirements_file }}
+          fail_on_vuln: ${{ inputs.fail_on_vuln }}

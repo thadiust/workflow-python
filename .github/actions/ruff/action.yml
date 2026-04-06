@@ -166,7 +166,10 @@ runs:
             echo " Use the same Ruff version as CI: ${{ inputs.ruff_version }}" >&2
             echo "" >&2
             echo "  python -m pip install 'ruff==${{ inputs.ruff_version }}'" >&2
-            echo "  cd <your project root>   # repository root, or paths below are relative to it" >&2
+            echo "  cd <your repository root>" >&2
+            if [ "${{ inputs.working_directory }}" != "." ]; then
+              echo "  cd \"${{ inputs.working_directory }}\"   # matches inputs.working_directory for this run" >&2
+            fi
             echo "  ruff format --force-exclude ${{ inputs.paths }}    # apply formatting" >&2
             echo "  ruff check --fix --force-exclude ${{ inputs.paths }}   # auto-fix lint rules" >&2
             echo "  ruff check --force-exclude ${{ inputs.paths }} && ruff format --check --force-exclude ${{ inputs.paths }}   # should pass" >&2

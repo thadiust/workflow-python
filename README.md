@@ -50,7 +50,7 @@ All inputs are optional; defaults assume `requirements.txt` at the repository ro
 | `run_pytest` | boolean | `true` | If `false`, the pytest job is skipped. |
 | `pytest_requirements_file` | string | `requirements.txt` | Requirements file (relative to `working_directory`) for installing app deps before pytest. |
 | `pytest_version` | string | `8.4.0` | Exact pytest version installed in the test job. |
-| `pytest_args` | string | `-q tests` | Arguments passed to `pytest` (default collects `./tests`). |
+| `pytest_args` | string | *(empty)* | Omit for auto: `-q tests` if `./tests` exists, else `-q test` if `./test` exists, else `-q`. Override with e.g. `-q .` or `-q mypkg/tests`. |
 | `run_gitleaks` | boolean | `true` | If `false`, the Gitleaks job is skipped. |
 | `run_pip_audit_scan` | boolean | `true` | If `false`, the pip-audit job is skipped. |
 | `run_bandit` | boolean | `true` | If `false`, the Bandit job is skipped. |
@@ -87,9 +87,6 @@ jobs:
       run_bandit: true
 ```
 
-Trigger it in either of these ways:
-
-- **`workflow_call`** from an app repo (for example [`sample-python-app`](https://github.com/thadiust/sample-python-app)) with the **full** input list (see table below).
-- **`workflow_dispatch`** from the **Actions** tab on **`workflow-python`** — GitHub allows **at most 10** `workflow_dispatch` inputs, so manual runs expose the **common** toggles only; everything else uses the **same defaults** as `workflow_call` (e.g. `ruff_paths` → `.`, `pytest_version` → `8.4.0`, `bandit_minimum_severity` → `all`).
+This workflow is **`workflow_call` only** (full inputs, no 10-key `workflow_dispatch` limit). Call it from an app repo with the **full** `with:` list (see table). To run **manually**, use **`workflow_dispatch`** on the **app** repo (e.g. [`sample-python-app`](https://github.com/thadiust/sample-python-app)), which still calls this file via **`workflow_call`**.
 
 For stable behavior, pin `@main` to a commit SHA or tag instead of a branch.

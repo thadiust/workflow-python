@@ -78,10 +78,10 @@ on:
         type: string
         default: "8.4.0"
       pytest_args:
-        description: "Arguments passed to pytest (default collects ./tests)"
+        description: "Space-separated pytest args. Leave empty for auto: -q tests if ./tests exists, else -q test if ./test exists, else -q (discovery)."
         required: false
         type: string
-        default: "-q tests"
+        default: ""
       run_gitleaks:
         description: "Whether to run the Gitleaks secrets scan job (after Ruff when Ruff is enabled)"
         required: false
@@ -107,61 +107,6 @@ on:
         required: false
         type: string
         default: "all"
-
-  # GitHub allows at most 10 workflow_dispatch inputs — same knobs as the most common `workflow_call` cases.
-  # Other inputs (ruff_paths, pytest_version, bandit_config, …) use the same defaults as `workflow_call` (see jobs below).
-  workflow_dispatch:
-    inputs:
-      working_directory:
-        description: "Directory containing the Python project to scan"
-        required: false
-        type: string
-        default: "."
-      requirements_file:
-        description: "Requirements file path relative to working_directory"
-        required: false
-        type: string
-        default: "requirements.txt"
-      python_version:
-        description: "Python version for lint and scan jobs"
-        required: false
-        type: string
-        default: "3.11"
-      fail_on_vuln:
-        description: "Fail the pip-audit job when vulnerabilities are found"
-        required: false
-        type: boolean
-        default: true
-      run_ruff:
-        description: "Whether to run the Ruff lint/format job"
-        required: false
-        type: boolean
-        default: true
-      ruff_version:
-        description: "Exact Ruff version for the lint job"
-        required: false
-        type: string
-        default: "0.15.9"
-      run_pytest:
-        description: "Whether to run pytest (parallel with Ruff when both enabled)"
-        required: false
-        type: boolean
-        default: true
-      run_gitleaks:
-        description: "Whether to run Gitleaks"
-        required: false
-        type: boolean
-        default: true
-      run_pip_audit_scan:
-        description: "Whether to run pip-audit"
-        required: false
-        type: boolean
-        default: true
-      run_bandit:
-        description: "Whether to run Bandit"
-        required: false
-        type: boolean
-        default: true
 
 jobs:
   # Ruff first (fast dev gate); then Gitleaks; Bandit and pip-audit stay parallel after secrets.
@@ -208,7 +153,7 @@ jobs:
           working_directory: ${{ inputs.working_directory }}
           requirements_file: ${{ inputs.pytest_requirements_file || 'requirements.txt' }}
           pytest_version: ${{ inputs.pytest_version || '8.4.0' }}
-          pytest_args: ${{ inputs.pytest_args || '-q tests' }}
+          pytest_args: ${{ inputs.pytest_args }}
 
   gitleaks-scan:
     needs:

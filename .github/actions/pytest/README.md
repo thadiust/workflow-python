@@ -22,4 +22,4 @@ On failure, it writes a short **Job Summary** with copy-paste commands.
 | `requirements_file` | `requirements.txt` | Relative to `working_directory`. |
 | `extra_install_args` | *(empty)* | Extra args passed to `pip install -r ...` (space-separated). |
 | `pytest_version` | `8.4.0` | Exact pytest version string. |
-| `pytest_args` | `-q tests` | Args passed to `pytest` (space-separated; default targets `./tests`). |
+| `pytest_args` | *(empty)* | Space-separated args; **empty** = auto (`tests/` or `test/` or discovery). |

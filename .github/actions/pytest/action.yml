@@ -28,9 +28,9 @@ inputs:
     default: "8.4.0"
 
   pytest_args:
-    description: "Space-separated args for pytest (default collects ./tests when present)"
+    description: "Space-separated pytest args. Empty = auto (-q tests if ./tests exists, else -q test if ./test exists, else -q)."
     required: false
-    default: "-q tests"
+    default: ""
 
 runs:
   using: "composite"
@@ -96,7 +96,13 @@ runs:
         pytest_args=()
         _pa="${{ inputs.pytest_args }}"
         if [ -z "$_pa" ]; then
-          _pa="-q tests"
+          if [ -d tests ]; then
+            _pa="-q tests"
+          elif [ -d test ]; then
+            _pa="-q test"
+          else
+            _pa="-q"
+          fi
         fi
         read -r -a pytest_args <<< "$_pa"
 

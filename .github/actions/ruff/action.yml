@@ -159,20 +159,72 @@ runs:
         fi
 
         if [ "$scan_status" = "findings_found" ]; then
+          # Job Summary tab — easier to find than scrolling logs.
+          if [ -n "${GITHUB_STEP_SUMMARY:-}" ]; then
+            {
+              echo "## Ruff failed — what to do next"
+              echo ""
+              echo "You do not need prior Ruff experience: follow the steps below, **commit**, and **push** again."
+              echo ""
+              echo "### 1. Terminal in your repo root"
+              echo ""
+              echo "### 2. Virtualenv (once per machine; avoids macOS \"externally managed\" / PEP 668 errors)"
+              echo ""
+              echo "\`\`\`bash"
+              echo "python3 -m venv .venv"
+              echo "source .venv/bin/activate   # Windows: .venv\\\\Scripts\\\\activate"
+              echo "python -m pip install -U pip"
+              echo "python -m pip install 'ruff==${{ inputs.ruff_version }}'"
+              echo "\`\`\`"
+              echo ""
+              echo "If your project already pins Ruff in \`requirements.txt\`, use \`pip install -r requirements.txt\` instead."
+              echo ""
+            } >> "$GITHUB_STEP_SUMMARY"
+            if [ "${{ inputs.working_directory }}" != "." ]; then
+              {
+                echo "### 3. Go to the same folder CI uses"
+                echo ""
+                echo "\`\`\`bash"
+                echo "cd \"${{ inputs.working_directory }}\""
+                echo "\`\`\`"
+                echo ""
+              } >> "$GITHUB_STEP_SUMMARY"
+            fi
+            {
+              echo "### Run Ruff (same as CI)"
+              echo ""
+              echo "\`\`\`bash"
+              echo "ruff format --force-exclude ${{ inputs.paths }}"
+              echo "ruff check --fix --force-exclude ${{ inputs.paths }}"
+              echo "ruff check --force-exclude ${{ inputs.paths }} && ruff format --check --force-exclude ${{ inputs.paths }}"
+              echo "\`\`\`"
+              echo ""
+              echo "If \`ruff\` is not found, use \`python -m ruff\` instead. **Alternative:** \`pipx install ruff==${{ inputs.ruff_version }}\`."
+              echo ""
+              echo "---"
+              echo "Full **diff** and duplicate instructions are in the **job log** above."
+            } >> "$GITHUB_STEP_SUMMARY"
+          fi
+
           print_fix_hint() {
             echo "" >&2
             echo "────────────────────────────────────────────────────────────────────────────" >&2
             echo " Ruff failed in CI — fix locally, commit, and push again." >&2
             echo " Use the same Ruff version as CI: ${{ inputs.ruff_version }}" >&2
             echo "" >&2
-            echo "  python -m pip install 'ruff==${{ inputs.ruff_version }}'" >&2
+            echo "  # Install Ruff in a virtualenv (avoids PEP 668 / \"externally managed\" errors on macOS Homebrew Python):" >&2
             echo "  cd <your repository root>" >&2
+            echo "  python3 -m venv .venv && source .venv/bin/activate   # Windows: .venv\\Scripts\\activate" >&2
+            echo "  python -m pip install -U pip && python -m pip install 'ruff==${{ inputs.ruff_version }}'" >&2
+            echo "  # Or install from your repo: python -m pip install -r requirements.txt  (if it lists ruff)" >&2
             if [ "${{ inputs.working_directory }}" != "." ]; then
               echo "  cd \"${{ inputs.working_directory }}\"   # matches inputs.working_directory for this run" >&2
             fi
             echo "  ruff format --force-exclude ${{ inputs.paths }}    # apply formatting" >&2
             echo "  ruff check --fix --force-exclude ${{ inputs.paths }}   # auto-fix lint rules" >&2
             echo "  ruff check --force-exclude ${{ inputs.paths }} && ruff format --check --force-exclude ${{ inputs.paths }}   # should pass" >&2
+            echo "  # If \`ruff\` is not found: same commands with \`python -m ruff\` instead of \`ruff\`." >&2
+            echo "  # Alternative: \`pipx install ruff==${{ inputs.ruff_version }}\` then use \`ruff\` from pipx." >&2
             echo "" >&2
             echo " (Your repo may document these as a script or task — the commands above match CI.)" >&2
             echo "────────────────────────────────────────────────────────────────────────────" >&2

@@ -114,6 +114,14 @@ on:
         default: "all"
 
 jobs:
+  # One line per run: confirms GitHub-hosted runner version (actions/setup-python@v6 etc. need >= 2.327.1).
+  runner-info:
+    runs-on: ubuntu-latest
+    timeout-minutes: 1
+    steps:
+      - name: Runner version
+        run: echo "runner.version=${{ runner.version }}"
+
   # Ruff first (fast dev gate); then Gitleaks; Bandit and pip-audit stay parallel after secrets.
   ruff-lint:
     if: ${{ inputs.run_ruff }}

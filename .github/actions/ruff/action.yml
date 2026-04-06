@@ -159,31 +159,17 @@ runs:
         fi
 
         if [ "$scan_status" = "findings_found" ]; then
-          # Job Summary tab — easier to find than scrolling logs.
+          # Job Summary — short copy-paste; venv / PEP 668 / shell notes belong in the repo README.
           if [ -n "${GITHUB_STEP_SUMMARY:-}" ]; then
             {
-              echo "## Ruff failed — what to do next"
+              echo "## Ruff failed — fix locally"
               echo ""
-              echo "You do not need prior Ruff experience: follow the steps below, **commit**, and **push** again."
-              echo ""
-              echo "### 1. Terminal in your repo root"
-              echo ""
-              echo "### 2. Virtualenv (once per machine; avoids macOS \"externally managed\" / PEP 668 errors)"
-              echo ""
-              echo "\`\`\`bash"
-              echo "python3 -m venv .venv"
-              echo "# Windows use: .venv\\\\Scripts\\\\activate"
-              echo "source .venv/bin/activate"
-              echo "python -m pip install -U pip"
-              echo "python -m pip install 'ruff==${{ inputs.ruff_version }}'"
-              echo "\`\`\`"
-              echo ""
-              echo "If your project already pins Ruff in \`requirements.txt\`, use \`pip install -r requirements.txt\` instead."
+              echo "Use **Ruff ${{ inputs.ruff_version }}** (same as CI). **Commit** and **push** when checks pass."
               echo ""
             } >> "$GITHUB_STEP_SUMMARY"
             if [ "${{ inputs.working_directory }}" != "." ]; then
               {
-                echo "### 3. Go to the same folder CI uses"
+                echo "CI runs from (relative to repo root):"
                 echo ""
                 echo "\`\`\`bash"
                 echo "cd \"${{ inputs.working_directory }}\""
@@ -192,48 +178,24 @@ runs:
               } >> "$GITHUB_STEP_SUMMARY"
             fi
             {
-              echo "### Run Ruff (same as CI)"
-              echo ""
               echo "\`\`\`bash"
               echo "ruff format --force-exclude ${{ inputs.paths }}"
               echo "ruff check --fix --force-exclude ${{ inputs.paths }}"
               echo "ruff check --force-exclude ${{ inputs.paths }} && ruff format --check --force-exclude ${{ inputs.paths }}"
               echo "\`\`\`"
               echo ""
-              echo "If \`ruff\` is not found, use \`python -m ruff\` instead. **Alternative:** \`pipx install ruff==${{ inputs.ruff_version }}\`."
+              echo "If \`ruff\` is missing: \`python -m pip install 'ruff==${{ inputs.ruff_version }}'\` (or install dev deps / \`requirements.txt\` if Ruff is pinned there)."
               echo ""
-              echo "---"
-              echo "Full **diff** and duplicate instructions are in the **job log** above."
+              echo "If \`ruff\` is not on PATH: \`python -m ruff\` with the same subcommands and flags."
+              echo ""
+              echo "Format **diff** and file **annotations** are in the job log / **Files** tab."
             } >> "$GITHUB_STEP_SUMMARY"
           fi
 
           print_fix_hint() {
             echo "" >&2
-            echo "────────────────────────────────────────────────────────────────────────────" >&2
-            echo " Ruff failed in CI — fix locally, commit, and push again." >&2
-            echo " Use the same Ruff version as CI: ${{ inputs.ruff_version }}" >&2
-            echo "" >&2
-            echo "  Paste one line at a time, or copy without trailing text: zsh may treat \"# ...\"" >&2
-            echo "  on the same line as extra filenames unless interactivecomments is on." >&2
-            echo "" >&2
-            echo "  # PEP 668: use a venv (macOS Homebrew Python)" >&2
-            echo "  cd <your repository root>" >&2
-            echo "  python3 -m venv .venv" >&2
-            echo "  source .venv/bin/activate" >&2
-            echo "  python -m pip install -U pip" >&2
-            echo "  python -m pip install 'ruff==${{ inputs.ruff_version }}'" >&2
-            echo "  # Or: python -m pip install -r requirements.txt" >&2
-            if [ "${{ inputs.working_directory }}" != "." ]; then
-              echo "  cd \"${{ inputs.working_directory }}\"" >&2
-            fi
-            echo "  ruff format --force-exclude ${{ inputs.paths }}" >&2
-            echo "  ruff check --fix --force-exclude ${{ inputs.paths }}" >&2
-            echo "  ruff check --force-exclude ${{ inputs.paths }} && ruff format --check --force-exclude ${{ inputs.paths }}" >&2
-            echo "  # If ruff not found: use python -m ruff ..." >&2
-            echo "  # Or: pipx install ruff==${{ inputs.ruff_version }}" >&2
-            echo "" >&2
-            echo " (Your repo may document these as a script or task — the commands above match CI.)" >&2
-            echo "────────────────────────────────────────────────────────────────────────────" >&2
+            echo "Ruff failed — fix with Ruff ${{ inputs.ruff_version }} locally, then commit and push." >&2
+            echo "Copy-paste commands: open the **Summary** tab on this workflow run." >&2
             echo "" >&2
           }
 

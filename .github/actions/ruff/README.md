@@ -11,7 +11,7 @@ Local composite used by the [`ruff-lint`](../../workflows/ci.yml) job. Callers u
 
 Ruff is installed with **`pip install --no-deps ruff==…`** (pinned `ruff_version`).
 
-On **failure**, the step writes a **Job Summary** (GitHub **Summary** tab for that job) with beginner-friendly steps, prints **`ruff format --diff`** in the log when format is the problem, and repeats a **copy-paste** command block. The hint uses a **venv** first so **PEP 668** (Homebrew / “externally managed” Python) does not block `pip install` on macOS.
+On **failure**, the step writes a short **Job Summary** (GitHub **Summary** tab) with copy-paste **Ruff** commands matching CI, prints **`ruff format --diff`** in the log when format is the problem, and prints a **brief** stderr pointer to the Summary. **Venv**, **PEP 668**, and shell quirks belong in the **consumer repo README**, not in CI noise.
 
 ## Inputs
 

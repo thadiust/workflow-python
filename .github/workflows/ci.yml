@@ -185,7 +185,8 @@ jobs:
     needs:
       - ruff-lint
       - gitleaks-scan
-    if: ${{ inputs.run_bandit && !cancelled() && (needs['ruff-lint'].result == 'success' || needs['ruff-lint'].result == 'skipped') && (needs['gitleaks-scan'].result == 'success' || needs['gitleaks-scan'].result == 'skipped') }}
+      - pytest-test
+    if: ${{ inputs.run_bandit && !cancelled() && (needs['ruff-lint'].result == 'success' || needs['ruff-lint'].result == 'skipped') && (needs['gitleaks-scan'].result == 'success' || needs['gitleaks-scan'].result == 'skipped') && (needs['pytest-test'].result == 'success' || needs['pytest-test'].result == 'skipped') }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
 
@@ -212,7 +213,8 @@ jobs:
     needs:
       - ruff-lint
       - gitleaks-scan
-    if: ${{ inputs.run_pip_audit_scan && !cancelled() && (needs['ruff-lint'].result == 'success' || needs['ruff-lint'].result == 'skipped') && (needs['gitleaks-scan'].result == 'success' || needs['gitleaks-scan'].result == 'skipped') }}
+      - pytest-test
+    if: ${{ inputs.run_pip_audit_scan && !cancelled() && (needs['ruff-lint'].result == 'success' || needs['ruff-lint'].result == 'skipped') && (needs['gitleaks-scan'].result == 'success' || needs['gitleaks-scan'].result == 'skipped') && (needs['pytest-test'].result == 'success' || needs['pytest-test'].result == 'skipped') }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
 

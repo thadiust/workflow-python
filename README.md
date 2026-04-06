@@ -2,11 +2,12 @@
 
 Reusable GitHub Actions workflow for Python security checks. App repositories call [`.github/workflows/ci.yml`](.github/workflows/ci.yml), which runs:
 
-1. **[Ruff](https://docs.astral.sh/ruff/)** via the composite at [`thadiust/workflow-python/.github/actions/ruff`](.github/actions/ruff/README.md) (referenced by ref in [`ci.yml`](.github/workflows/ci.yml), not `./…`, so it works when the reusable workflow runs in **caller** repos). `ruff check` (GitHub annotations) and optional `ruff format --check`, pinned version, **`--force-exclude`**. Toggle with `run_ruff` and related inputs.
-2. **[Gitleaks](https://github.com/gitleaks/gitleaks)** via [`thadiust/secrets-gitleaks`](https://github.com/thadiust/secrets-gitleaks) (secrets; **full git history** — checkout uses `fetch-depth: 0`). If you **delete** a leaked file in a new commit but the job **still fails**, Gitleaks is matching an **older commit**; you need **history cleanup** (squash / `git filter-repo`) or a **baseline**, not only a delete commit. See [**Removed the file, but CI still fails?**](https://github.com/thadiust/secrets-gitleaks/blob/main/README.md#removed-the-file-but-ci-still-fails) in the action README.
-3. In parallel after that: **[Bandit](https://github.com/pycqa/bandit)** ([`thadiust/sast-bandit`](https://github.com/thadiust/sast-bandit)) for SAST (**issues**) and **[pip-audit](https://github.com/pypa/pip-audit)** ([`thadiust/pip-audit-scan-action`](https://github.com/thadiust/pip-audit-scan-action)) for dependency **vulnerabilities**
+1. **[Ruff](https://docs.astral.sh/ruff/)** via the composite at [`.github/actions/ruff`](.github/actions/ruff/README.md). [`ci.yml`](.github/workflows/ci.yml) references it as **`./.github/actions/ruff`** (resolved from this repository when the reusable workflow runs). **Callers** only reference the **reusable workflow** (`uses: org/workflow-python/.github/workflows/ci.yml@…`); they must not use `./` to reach composites in another repo. `ruff check` (GitHub annotations) and optional `ruff format --check`, pinned version, **`--force-exclude`**. Toggle with `run_ruff` and related inputs.
+2. **[pytest](https://pytest.org/)** via [`.github/actions/pytest`](.github/actions/pytest/README.md) (`./.github/actions/pytest` in `ci.yml`), **in parallel** with Ruff when both are enabled (`run_pytest`). Installs deps from `pytest_requirements_file` and runs `python -m pytest` with `pytest_args`; pytest itself is pinned to `pytest_version`.
+3. **[Gitleaks](https://github.com/gitleaks/gitleaks)** via [`thadiust/secrets-gitleaks`](https://github.com/thadiust/secrets-gitleaks) (secrets; **full git history** — checkout uses `fetch-depth: 0`). If you **delete** a leaked file in a new commit but the job **still fails**, Gitleaks is matching an **older commit**; you need **history cleanup** (squash / `git filter-repo`) or a **baseline**, not only a delete commit. See [**Removed the file, but CI still fails?**](https://github.com/thadiust/secrets-gitleaks/blob/main/README.md#removed-the-file-but-ci-still-fails) in the action README.
+4. After that: **[Bandit](https://github.com/pycqa/bandit)** ([`thadiust/sast-bandit`](https://github.com/thadiust/sast-bandit)) for SAST (**issues**) and **[pip-audit](https://github.com/pypa/pip-audit)** ([`thadiust/pip-audit-scan-action`](https://github.com/thadiust/pip-audit-scan-action)) for dependency **vulnerabilities** (in parallel with each other).
 
-**Ruff** runs first when enabled. **Gitleaks** runs after Ruff succeeds or if Ruff is skipped. **Bandit** and **pip-audit** run **in parallel** after that; each **`needs`** **`ruff-lint`** and **`gitleaks-scan`**, and only runs when Ruff is **success or skipped** *and* Gitleaks is **success or skipped** — so a **failed Ruff** does not still run Bandit/pip-audit (Gitleaks can be “skipped” in that case, which previously looked like `run_gitleaks: false`). If Gitleaks fails, both are skipped. Toggle jobs with `run_ruff`, `run_gitleaks`, `run_bandit`, and `run_pip_audit_scan`. If **every** job is disabled, the workflow has no jobs and GitHub will reject the run — leave at least one enabled.
+**Gitleaks** runs after Ruff succeeds or if Ruff is skipped. **Bandit** and **pip-audit** run **in parallel** after that; each **`needs`** **`ruff-lint`** and **`gitleaks-scan`**, and only runs when Ruff is **success or skipped** *and* Gitleaks is **success or skipped** — so a **failed Ruff** does not still run Bandit/pip-audit (Gitleaks can be “skipped” in that case, which previously looked like `run_gitleaks: false`). If Gitleaks fails, both are skipped. Toggle jobs with `run_ruff`, `run_pytest`, `run_gitleaks`, `run_bandit`, and `run_pip_audit_scan`. If **every** job is disabled, the workflow has no jobs and GitHub will reject the run — leave at least one enabled.
 
 This layout **fails fast on lint**, then **secrets**, while **SAST (Bandit)** and **SCA (pip-audit)** stay **independent** after secrets.
 
@@ -26,7 +27,7 @@ Across these jobs, a **finding** is anything that can fail the pipeline when the
 - **Token scope:** The workflow sets **`permissions: contents: read`** so the default `GITHUB_TOKEN` is not granted write access it does not need.
 - **Checkout:** Jobs use **`persist-credentials: false`** so the credential helper is not left configured for later steps. Gitleaks uses **`fetch-depth: 0`** (full history); Bandit and pip-audit use **`fetch-depth: 1`** (current commit only) to avoid cloning full history on two extra runners.
 - **Concurrency:** This workflow defines a **`concurrency`** group (per repository and ref) with **`cancel-in-progress: true`** so superseded runs are dropped when the same branch is pushed again. If your **caller** workflow defines its own `concurrency`, GitHub applies the caller’s rules for the whole run; avoid defining two competing groups for the same jobs.
-- **Parallel jobs vs minutes:** Ruff and Gitleaks run **one after the other** (one runner at a time for those stages). After Gitleaks, **Bandit** and **pip-audit** can run **at the same time** (two runners). **Billed minutes** sum across all jobs. Disable jobs you do not need via inputs to save time.
+- **Parallel jobs vs minutes:** **Ruff** and **pytest** run **in parallel** (two runners when both are enabled). **Gitleaks** runs after Ruff succeeds or is skipped. After Gitleaks, **Bandit** and **pip-audit** can run **at the same time** (two more runners). **Billed minutes** sum across all jobs. Disable jobs you do not need via inputs to save time.
 - **Timeouts:** Ruff uses **`timeout-minutes: 15`**; other jobs use **`timeout-minutes: 30`** so a hung scanner does not burn the runner default (6 hours).
 - **Supply chain:** Callers should **pin** `uses: ...@sha` for this workflow and for each composite action instead of `@main` when you want immutable behavior.
 
@@ -46,6 +47,10 @@ All inputs are optional; defaults assume `requirements.txt` at the repository ro
 | `ruff_config` | string | *(empty)* | Optional Ruff config path relative to `working_directory`. |
 | `run_ruff_format` | boolean | `true` | If `false`, skip `ruff format --check`. |
 | `ruff_fail_on_findings` | boolean | `true` | If `true`, the Ruff job fails when check or format reports work to do. |
+| `run_pytest` | boolean | `true` | If `false`, the pytest job is skipped. |
+| `pytest_requirements_file` | string | `requirements.txt` | Requirements file (relative to `working_directory`) for installing app deps before pytest. |
+| `pytest_version` | string | `8.4.0` | Exact pytest version installed in the test job. |
+| `pytest_args` | string | `-q` | Arguments passed to `pytest`. |
 | `run_gitleaks` | boolean | `true` | If `false`, the Gitleaks job is skipped. |
 | `run_pip_audit_scan` | boolean | `true` | If `false`, the pip-audit job is skipped. |
 | `run_bandit` | boolean | `true` | If `false`, the Bandit job is skipped. |
@@ -72,9 +77,19 @@ jobs:
       requirements_file: "requirements.txt"
       python_version: "3.11"
       fail_on_vuln: true
+      run_ruff: true
+      ruff_version: "0.15.9"
+      run_pytest: true
+      pytest_version: "8.4.0"
+      pytest_requirements_file: "requirements.txt"
       run_gitleaks: true
       run_pip_audit_scan: true
       run_bandit: true
 ```
 
-You can also run [`.github/workflows/ci.yml`](.github/workflows/ci.yml) manually via **workflow_dispatch** from the Actions tab of this repo. For stable behavior, pin `@main` to a commit SHA or tag instead of a branch.
+Trigger it in either of these ways:
+
+- **`workflow_call`** from an app repo (for example [`sample-python-app`](https://github.com/thadiust/sample-python-app)) with the **full** input list (see table below).
+- **`workflow_dispatch`** from the **Actions** tab on **`workflow-python`** — GitHub allows **at most 10** `workflow_dispatch` inputs, so manual runs expose the **common** toggles only; everything else uses the **same defaults** as `workflow_call` (e.g. `ruff_paths` → `.`, `pytest_version` → `8.4.0`, `bandit_minimum_severity` → `all`).
+
+For stable behavior, pin `@main` to a commit SHA or tag instead of a branch.

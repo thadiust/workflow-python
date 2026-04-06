@@ -1,0 +1,124 @@
+name: "Pytest"
+description: "Run pytest for a Python project (pinned install optional; writes Job Summary on failure)"
+
+inputs:
+  python_version:
+    description: "Python version to use"
+    required: false
+    default: "3.11"
+
+  working_directory:
+    description: "Directory to run from (repo root relative)"
+    required: false
+    default: "."
+
+  requirements_file:
+    description: "Requirements file path relative to working_directory (installed before running pytest)"
+    required: false
+    default: "requirements.txt"
+
+  extra_install_args:
+    description: "Optional extra pip args for installing requirements (e.g. --no-deps)"
+    required: false
+    default: ""
+
+  pytest_version:
+    description: "Exact pytest version to install (pin for reproducible CI)"
+    required: false
+    default: "8.4.0"
+
+  pytest_args:
+    description: "Arguments passed to pytest (e.g. -q, -k test_name, --maxfail=1)"
+    required: false
+    default: "-q"
+
+runs:
+  using: "composite"
+  steps:
+    - name: Validate inputs
+      shell: bash
+      working-directory: ${{ inputs.working_directory }}
+      run: |
+        set -euo pipefail
+
+        if [ -z "${{ inputs.requirements_file }}" ]; then
+          echo "requirements_file must be a non-empty relative path." >&2
+          exit 1
+        fi
+
+        case "${{ inputs.requirements_file }}" in
+          /*)
+            echo "requirements_file must be relative (no leading slash): ${{ inputs.requirements_file }}" >&2
+            exit 1
+            ;;
+        esac
+
+        if [[ "${{ inputs.requirements_file }}" =~ (^|/)\.\.(/|$) ]]; then
+          echo "requirements_file must not traverse parents (..): ${{ inputs.requirements_file }}" >&2
+          exit 1
+        fi
+
+        if [ ! -f "${{ inputs.requirements_file }}" ]; then
+          echo "requirements_file not found: ${{ inputs.requirements_file }} (cwd: $PWD)" >&2
+          exit 1
+        fi
+
+    - name: Setup Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ inputs.python_version }}
+
+    - name: Install dependencies (incl. pytest)
+      shell: bash
+      working-directory: ${{ inputs.working_directory }}
+      run: |
+        set -euo pipefail
+        python -m pip install --disable-pip-version-check -q -U pip
+
+        extra=()
+        if [ -n "${{ inputs.extra_install_args }}" ]; then
+          read -r -a extra <<< "${{ inputs.extra_install_args }}"
+        fi
+
+        python -m pip install --disable-pip-version-check -q "${extra[@]}" -r "${{ inputs.requirements_file }}"
+
+        python -m pip install --disable-pip-version-check -q "pytest==${{ inputs.pytest_version }}"
+
+    - name: Run pytest
+      id: pytest
+      shell: bash
+      working-directory: ${{ inputs.working_directory }}
+      run: |
+        set -euo pipefail
+        pytest_args=()
+        if [ -n "${{ inputs.pytest_args }}" ]; then
+          read -r -a pytest_args <<< "${{ inputs.pytest_args }}"
+        fi
+
+        set +e
+        python -m pytest "${pytest_args[@]}"
+        exit_code=$?
+        set -e
+
+        if [ "$exit_code" -ne 0 ]; then
+          if [ -n "${GITHUB_STEP_SUMMARY:-}" ]; then
+            {
+              echo "## Pytest failed — fix locally"
+              echo ""
+              echo "Run the same commands locally, then **commit** and **push** again."
+              echo ""
+              echo "\\`\\`\\`bash"
+              echo "python -m pip install -r ${{ inputs.requirements_file }}"
+              echo "python -m pip install pytest==${{ inputs.pytest_version }}"
+              echo "python -m pytest ${{ inputs.pytest_args }}"
+              echo "\\`\\`\\`"
+              echo ""
+              echo "See the job log above for the failing test output."
+            } >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+          echo "Pytest failed (exit_code=$exit_code). See Summary tab for copy-paste." >&2
+          exit "$exit_code"
+        fi
+
+        echo "Pytest passed."

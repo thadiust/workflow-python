@@ -163,7 +163,8 @@ jobs:
   gitleaks-scan:
     needs:
       - ruff-lint
-    if: ${{ inputs.run_gitleaks && !cancelled() && (needs['ruff-lint'].result == 'success' || needs['ruff-lint'].result == 'skipped') }}
+      - pytest-test
+    if: ${{ inputs.run_gitleaks && !cancelled() && (needs['ruff-lint'].result == 'success' || needs['ruff-lint'].result == 'skipped') && (needs['pytest-test'].result == 'success' || needs['pytest-test'].result == 'skipped') }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
 

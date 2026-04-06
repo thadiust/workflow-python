@@ -29,7 +29,7 @@ Across these jobs, a **finding** is anything that can fail the pipeline when the
 - **Concurrency:** This workflow defines a **`concurrency`** group (per repository and ref) with **`cancel-in-progress: true`** so superseded runs are dropped when the same branch is pushed again. If your **caller** workflow defines its own `concurrency`, GitHub applies the caller’s rules for the whole run; avoid defining two competing groups for the same jobs.
 - **Parallel jobs vs minutes:** **Ruff** and **pytest** run **in parallel** (two runners when both are enabled). **Gitleaks** starts only after **both** Ruff and pytest finish (**success or skipped**). After Gitleaks, **Bandit** and **pip-audit** run **at the same time** (two more runners). **Billed minutes** sum across all jobs. Disable jobs you do not need via inputs to save time.
 - **Timeouts:** Ruff uses **`timeout-minutes: 15`**; other jobs use **`timeout-minutes: 30`** so a hung scanner does not burn the runner default (6 hours).
-- **Supply chain:** Callers should **pin** `uses: ...@sha` for this workflow and for each composite action instead of `@main` when you want immutable behavior.
+- **Supply chain:** Callers should reference this workflow with **`@main`** or a **semver tag** (e.g. **`@v1.0.0`**). This project does not require pinning to commit SHAs.
 
 ## Inputs
 
@@ -97,4 +97,4 @@ jobs:
 
 This workflow is **`workflow_call` only** (full inputs, no 10-key `workflow_dispatch` limit). Call it from an app repo with the **full** `with:` list (see table). To run **manually**, use **`workflow_dispatch`** on the **app** repo (e.g. [`sample-python-app`](https://github.com/thadiust/sample-python-app)), which still calls this file via **`workflow_call`**.
 
-For stable behavior, pin `@main` to a commit SHA or tag instead of a branch.
+For controlled upgrades, call **`uses: …/ci.yml@v1.0.0`** (or another tag) instead of **`@main`**; bump the tag when you intentionally adopt a new release.

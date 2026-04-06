@@ -172,7 +172,8 @@ runs:
               echo ""
               echo "\`\`\`bash"
               echo "python3 -m venv .venv"
-              echo "source .venv/bin/activate   # Windows: .venv\\\\Scripts\\\\activate"
+              echo "# Windows use: .venv\\\\Scripts\\\\activate"
+              echo "source .venv/bin/activate"
               echo "python -m pip install -U pip"
               echo "python -m pip install 'ruff==${{ inputs.ruff_version }}'"
               echo "\`\`\`"
@@ -212,19 +213,24 @@ runs:
             echo " Ruff failed in CI — fix locally, commit, and push again." >&2
             echo " Use the same Ruff version as CI: ${{ inputs.ruff_version }}" >&2
             echo "" >&2
-            echo "  # Install Ruff in a virtualenv (avoids PEP 668 / \"externally managed\" errors on macOS Homebrew Python):" >&2
+            echo "  Paste one line at a time, or copy without trailing text: zsh may treat \"# ...\"" >&2
+            echo "  on the same line as extra filenames unless interactivecomments is on." >&2
+            echo "" >&2
+            echo "  # PEP 668: use a venv (macOS Homebrew Python)" >&2
             echo "  cd <your repository root>" >&2
-            echo "  python3 -m venv .venv && source .venv/bin/activate   # Windows: .venv\\Scripts\\activate" >&2
-            echo "  python -m pip install -U pip && python -m pip install 'ruff==${{ inputs.ruff_version }}'" >&2
-            echo "  # Or install from your repo: python -m pip install -r requirements.txt  (if it lists ruff)" >&2
+            echo "  python3 -m venv .venv" >&2
+            echo "  source .venv/bin/activate" >&2
+            echo "  python -m pip install -U pip" >&2
+            echo "  python -m pip install 'ruff==${{ inputs.ruff_version }}'" >&2
+            echo "  # Or: python -m pip install -r requirements.txt" >&2
             if [ "${{ inputs.working_directory }}" != "." ]; then
-              echo "  cd \"${{ inputs.working_directory }}\"   # matches inputs.working_directory for this run" >&2
+              echo "  cd \"${{ inputs.working_directory }}\"" >&2
             fi
-            echo "  ruff format --force-exclude ${{ inputs.paths }}    # apply formatting" >&2
-            echo "  ruff check --fix --force-exclude ${{ inputs.paths }}   # auto-fix lint rules" >&2
-            echo "  ruff check --force-exclude ${{ inputs.paths }} && ruff format --check --force-exclude ${{ inputs.paths }}   # should pass" >&2
-            echo "  # If \`ruff\` is not found: same commands with \`python -m ruff\` instead of \`ruff\`." >&2
-            echo "  # Alternative: \`pipx install ruff==${{ inputs.ruff_version }}\` then use \`ruff\` from pipx." >&2
+            echo "  ruff format --force-exclude ${{ inputs.paths }}" >&2
+            echo "  ruff check --fix --force-exclude ${{ inputs.paths }}" >&2
+            echo "  ruff check --force-exclude ${{ inputs.paths }} && ruff format --check --force-exclude ${{ inputs.paths }}" >&2
+            echo "  # If ruff not found: use python -m ruff ..." >&2
+            echo "  # Or: pipx install ruff==${{ inputs.ruff_version }}" >&2
             echo "" >&2
             echo " (Your repo may document these as a script or task — the commands above match CI.)" >&2
             echo "────────────────────────────────────────────────────────────────────────────" >&2

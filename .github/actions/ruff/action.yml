@@ -159,6 +159,39 @@ runs:
         fi
 
         if [ "$scan_status" = "findings_found" ]; then
+          print_fix_hint() {
+            echo "" >&2
+            echo "────────────────────────────────────────────────────────────────────────────" >&2
+            echo " Ruff failed in CI — fix locally, commit, and push again." >&2
+            echo " Use the same Ruff version as CI: ${{ inputs.ruff_version }}" >&2
+            echo "" >&2
+            echo "  python -m pip install 'ruff==${{ inputs.ruff_version }}'" >&2
+            echo "  cd <your project root>   # repository root, or paths below are relative to it" >&2
+            echo "  ruff format --force-exclude ${{ inputs.paths }}    # apply formatting" >&2
+            echo "  ruff check --fix --force-exclude ${{ inputs.paths }}   # auto-fix lint rules" >&2
+            echo "  ruff check --force-exclude ${{ inputs.paths }} && ruff format --check --force-exclude ${{ inputs.paths }}   # should pass" >&2
+            echo "" >&2
+            echo " (Your repo may document these as a script or task — the commands above match CI.)" >&2
+            echo "────────────────────────────────────────────────────────────────────────────" >&2
+            echo "" >&2
+          }
+
+          if [ "$fmt_exit" -eq 1 ]; then
+            echo "Diff — changes \`ruff format\` would apply (compare with your branch):" >&2
+            set +e
+            ruff format "${CONFIG_ARGS[@]}" --force-exclude --diff "${CHECK_PATHS[@]}"
+            set -e
+            echo "" >&2
+          fi
+
+          if [ "$check_exit" -eq 1 ]; then
+            echo "Lint issues — details above (GitHub annotations on the Files tab). Re-run locally:" >&2
+            echo "  ruff check --force-exclude ${{ inputs.paths }}" >&2
+            echo "" >&2
+          fi
+
+          print_fix_hint
+
           if [ "${{ inputs.fail_on_findings }}" = "true" ]; then
             exit 1
           fi

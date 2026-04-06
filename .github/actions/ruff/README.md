@@ -11,6 +11,8 @@ Local composite used by the [`ruff-lint`](../../workflows/ci.yml) job. Callers u
 
 Ruff is installed with **`pip install --no-deps ruff==…`** (pinned `ruff_version`).
 
+On **failure**, the step prints **`ruff format --diff`** (when format is the problem) and a **copy-paste block** of commands to run locally with the same version — so Actions logs are self-explanatory without reading this README.
+
 ## Inputs
 
 | Input | Default | Notes |

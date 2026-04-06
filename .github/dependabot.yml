@@ -1,0 +1,8 @@
+# Bump GitHub Actions when this repo is published as workflow-python (root = this folder).
+version: 2
+updates:
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 10

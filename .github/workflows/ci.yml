@@ -23,7 +23,7 @@ on:
         type: string
         default: "requirements.txt"
       python_version:
-        description: "Python version for the scan jobs"
+        description: "Python version for lint and scan jobs"
         required: false
         type: string
         default: "3.11"
@@ -32,8 +32,38 @@ on:
         required: false
         type: boolean
         default: true
+      run_ruff:
+        description: "Whether to run the Ruff lint/format job (runs first when enabled)"
+        required: false
+        type: boolean
+        default: true
+      ruff_version:
+        description: "Exact Ruff version for the lint job"
+        required: false
+        type: string
+        default: "0.15.9"
+      ruff_paths:
+        description: "Space-separated paths relative to working_directory for ruff check and format"
+        required: false
+        type: string
+        default: "."
+      ruff_config:
+        description: "Optional Ruff config path relative to working_directory"
+        required: false
+        type: string
+        default: ""
+      run_ruff_format:
+        description: "Whether to run ruff format --check after ruff check"
+        required: false
+        type: boolean
+        default: true
+      ruff_fail_on_findings:
+        description: "Fail the Ruff job when check or format reports work to do"
+        required: false
+        type: boolean
+        default: true
       run_gitleaks:
-        description: "Whether to run the Gitleaks secrets scan job (runs first when enabled)"
+        description: "Whether to run the Gitleaks secrets scan job (after Ruff when Ruff is enabled)"
         required: false
         type: boolean
         default: true
@@ -70,7 +100,7 @@ on:
         type: string
         default: "requirements.txt"
       python_version:
-        description: "Python version for the scan jobs"
+        description: "Python version for lint and scan jobs"
         required: false
         type: string
         default: "3.11"
@@ -79,8 +109,38 @@ on:
         required: false
         type: boolean
         default: true
+      run_ruff:
+        description: "Whether to run the Ruff lint/format job (runs first when enabled)"
+        required: false
+        type: boolean
+        default: true
+      ruff_version:
+        description: "Exact Ruff version for the lint job"
+        required: false
+        type: string
+        default: "0.15.9"
+      ruff_paths:
+        description: "Space-separated paths relative to working_directory for ruff check and format"
+        required: false
+        type: string
+        default: "."
+      ruff_config:
+        description: "Optional Ruff config path relative to working_directory"
+        required: false
+        type: string
+        default: ""
+      run_ruff_format:
+        description: "Whether to run ruff format --check after ruff check"
+        required: false
+        type: boolean
+        default: true
+      ruff_fail_on_findings:
+        description: "Fail the Ruff job when check or format reports work to do"
+        required: false
+        type: boolean
+        default: true
       run_gitleaks:
-        description: "Whether to run the Gitleaks secrets scan job (runs first when enabled)"
+        description: "Whether to run the Gitleaks secrets scan job (after Ruff when Ruff is enabled)"
         required: false
         type: boolean
         default: true
@@ -106,9 +166,34 @@ on:
         default: "all"
 
 jobs:
-  # Gitleaks first; Bandit and pip-audit run in parallel after it (each only needs gitleaks-scan).
+  # Ruff first (fast dev gate); then Gitleaks; Bandit and pip-audit stay parallel after secrets.
+  ruff-lint:
+    if: ${{ inputs.run_ruff }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Run Ruff
+        uses: ./.github/actions/ruff
+        with:
+          python_version: ${{ inputs.python_version }}
+          ruff_version: ${{ inputs.ruff_version }}
+          working_directory: ${{ inputs.working_directory }}
+          paths: ${{ inputs.ruff_paths }}
+          config: ${{ inputs.ruff_config }}
+          run_format_check: ${{ inputs.run_ruff_format }}
+          fail_on_findings: ${{ inputs.ruff_fail_on_findings }}
+
   gitleaks-scan:
-    if: ${{ inputs.run_gitleaks }}
+    needs:
+      - ruff-lint
+    if: ${{ inputs.run_gitleaks && !cancelled() && (needs['ruff-lint'].result == 'success' || needs['ruff-lint'].result == 'skipped') }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
 

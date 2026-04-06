@@ -1,0 +1,169 @@
+name: "Ruff lint and format check"
+description: "Run Ruff check and optional format --check (single pass each; pinned version)"
+
+outputs:
+  format_ok:
+    description: "true if format --check passed or was skipped; false if it ran and failed"
+    value: ${{ steps.ruff.outputs.format_ok }}
+  scan_status:
+    description: "clean, findings_found, or scanner_error (Ruff exit 2 = tool/CLI error)"
+    value: ${{ steps.ruff.outputs.scan_status }}
+
+inputs:
+  python_version:
+    description: "Python version to use"
+    required: false
+    default: "3.11"
+
+  ruff_version:
+    description: "Exact Ruff version to install (pin for reproducible CI and supply chain)"
+    required: false
+    default: "0.15.9"
+
+  working_directory:
+    description: "Directory to run from (repo root relative)"
+    required: false
+    default: "."
+
+  paths:
+    description: "Space-separated paths for ruff check and format (relative to working_directory; no .. or absolute paths)"
+    required: false
+    default: "."
+
+  config:
+    description: "Optional Ruff config path relative to working_directory (--config)"
+    required: false
+    default: ""
+
+  run_format_check:
+    description: "If true, run ruff format --check on the same paths"
+    required: false
+    default: "true"
+
+  fail_on_findings:
+    description: "Fail the step when ruff check or format --check reports fixable work (exit 1)"
+    required: false
+    default: "true"
+
+runs:
+  using: "composite"
+  steps:
+    - name: Validate inputs
+      shell: bash
+      working-directory: ${{ inputs.working_directory }}
+      run: |
+        set -euo pipefail
+
+        case "${{ inputs.fail_on_findings }}" in
+          true|false) ;;
+          *)
+            echo "Unsupported fail_on_findings: ${{ inputs.fail_on_findings }}. Use true or false." >&2
+            exit 1
+            ;;
+        esac
+
+        case "${{ inputs.run_format_check }}" in
+          true|false) ;;
+          *)
+            echo "Unsupported run_format_check: ${{ inputs.run_format_check }}. Use true or false." >&2
+            exit 1
+            ;;
+        esac
+
+        if [ -n "${{ inputs.config }}" ] && [ ! -f "${{ inputs.config }}" ]; then
+          echo "Ruff config not found: ${{ inputs.config }}" >&2
+          exit 1
+        fi
+
+        read -r -a CHECK_PATHS <<< "${{ inputs.paths }}"
+        if [ "${#CHECK_PATHS[@]}" -eq 0 ]; then
+          echo "paths must contain at least one path." >&2
+          exit 1
+        fi
+        for t in "${CHECK_PATHS[@]}"; do
+          case "$t" in
+            /*)
+              echo "paths must be relative (no leading slash): $t" >&2
+              exit 1
+              ;;
+          esac
+          if [[ "$t" =~ (^|/)\.\.(/|$) ]]; then
+            echo "paths must not traverse parents (..): $t" >&2
+            exit 1
+          fi
+          if [ ! -e "$t" ]; then
+            echo "Path does not exist: $t" >&2
+            exit 1
+          fi
+        done
+
+    - name: Setup Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ inputs.python_version }}
+
+    - name: Install Ruff
+      shell: bash
+      working-directory: ${{ inputs.working_directory }}
+      run: |
+        set -euo pipefail
+        python -m pip install --disable-pip-version-check -q --no-deps "ruff==${{ inputs.ruff_version }}"
+
+    - name: Run Ruff
+      id: ruff
+      shell: bash
+      working-directory: ${{ inputs.working_directory }}
+      run: |
+        set -euo pipefail
+
+        read -r -a CHECK_PATHS <<< "${{ inputs.paths }}"
+
+        CONFIG_ARGS=()
+        if [ -n "${{ inputs.config }}" ]; then
+          CONFIG_ARGS+=( --config "${{ inputs.config }}" )
+        fi
+
+        # --force-exclude: respect exclude rules when paths are explicit (matches pre-commit hooks).
+        set +e
+        ruff check "${CONFIG_ARGS[@]}" --force-exclude --output-format github "${CHECK_PATHS[@]}"
+        check_exit=$?
+        set -e
+
+        format_ok="true"
+        fmt_exit=0
+        if [ "${{ inputs.run_format_check }}" = "true" ] && [ "$check_exit" -ne 2 ]; then
+          set +e
+          ruff format "${CONFIG_ARGS[@]}" --force-exclude --check "${CHECK_PATHS[@]}"
+          fmt_exit=$?
+          set -e
+          if [ "$fmt_exit" -ne 0 ]; then
+            format_ok="false"
+          fi
+        fi
+
+        scan_status="clean"
+        if [ "$check_exit" -eq 2 ] || [ "$fmt_exit" -eq 2 ]; then
+          scan_status="scanner_error"
+        elif [ "$check_exit" -eq 1 ] || [ "$fmt_exit" -eq 1 ]; then
+          scan_status="findings_found"
+        fi
+
+        {
+          echo "format_ok=$format_ok"
+          echo "scan_status=$scan_status"
+        } >> "$GITHUB_OUTPUT"
+
+        if [ "$scan_status" = "scanner_error" ]; then
+          echo "Ruff exited with a tool or CLI error (check_exit=${check_exit}, fmt_exit=${fmt_exit})." >&2
+          exit 2
+        fi
+
+        if [ "$scan_status" = "findings_found" ]; then
+          if [ "${{ inputs.fail_on_findings }}" = "true" ]; then
+            exit 1
+          fi
+          echo "fail_on_findings=false; continuing despite findings." >&2
+          exit 0
+        fi
+
+        echo "Ruff check and format (if enabled) passed."

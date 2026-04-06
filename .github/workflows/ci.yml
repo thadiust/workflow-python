@@ -113,6 +113,12 @@ on:
         type: string
         default: "all"
 
+      upload_code_scanning:
+        description: "Upload Bandit and Gitleaks SARIF to GitHub Code Scanning (Security tab / PR). Caller job needs security-events: write. No-op if Advanced Security is off (upload step uses continue-on-error)."
+        required: false
+        type: boolean
+        default: true
+
 jobs:
   # Logs documented runner context (no runner.version in schema — use os/arch/environment/name).
   runner-info:
@@ -179,6 +185,9 @@ jobs:
     if: ${{ inputs.run_gitleaks && !cancelled() && (needs['ruff-lint'].result == 'success' || needs['ruff-lint'].result == 'skipped') && (needs['pytest-test'].result == 'success' || needs['pytest-test'].result == 'skipped') }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    permissions:
+      contents: read
+      security-events: write
 
     steps:
       - name: Checkout repo
@@ -189,10 +198,20 @@ jobs:
 
       - name: Run Gitleaks
         id: gitleaks
-        uses: thadiust/secrets-gitleaks@v1.0.1
+        uses: thadiust/secrets-gitleaks@v1.0.2
         with:
           working_directory: ${{ inputs.working_directory }}
           fail_on_findings: true
+          write_sarif: ${{ inputs.upload_code_scanning }}
+          sarif_filename: gitleaks-results.sarif
+
+      - name: Upload Gitleaks SARIF to GitHub Code Scanning
+        if: ${{ inputs.upload_code_scanning != false && (success() || failure()) && steps.gitleaks.outputs.sarif_path != '' }}
+        continue-on-error: true
+        uses: github/codeql-action/upload-sarif@v4
+        with:
+          sarif_file: ${{ steps.gitleaks.outputs.sarif_path }}
+          category: gitleaks
 
   bandit-scan:
     needs:
@@ -202,6 +221,9 @@ jobs:
     if: ${{ inputs.run_bandit && !cancelled() && (needs['ruff-lint'].result == 'success' || needs['ruff-lint'].result == 'skipped') && (needs['gitleaks-scan'].result == 'success' || needs['gitleaks-scan'].result == 'skipped') && (needs['pytest-test'].result == 'success' || needs['pytest-test'].result == 'skipped') }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    permissions:
+      contents: read
+      security-events: write
 
     steps:
       - name: Checkout repo
@@ -212,7 +234,7 @@ jobs:
 
       - name: Run Bandit SAST
         id: bandit
-        uses: thadiust/sast-bandit@v1.0.0
+        uses: thadiust/sast-bandit@v1.0.1
         with:
           python_version: ${{ inputs.python_version }}
           working_directory: ${{ inputs.working_directory }}
@@ -221,6 +243,16 @@ jobs:
           fail_on_findings: true
           bandit_config: ${{ inputs.bandit_config || '' }}
           minimum_severity: ${{ inputs.bandit_minimum_severity || 'all' }}
+          write_sarif: ${{ inputs.upload_code_scanning }}
+          sarif_filename: bandit-results.sarif
+
+      - name: Upload Bandit SARIF to GitHub Code Scanning
+        if: ${{ inputs.upload_code_scanning != false && (success() || failure()) && steps.bandit.outputs.sarif_path != '' }}
+        continue-on-error: true
+        uses: github/codeql-action/upload-sarif@v4
+        with:
+          sarif_file: ${{ steps.bandit.outputs.sarif_path }}
+          category: bandit
 
   pip-audit-scan:
     needs:

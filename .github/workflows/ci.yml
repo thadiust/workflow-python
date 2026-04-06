@@ -102,6 +102,11 @@ on:
         required: false
         type: string
         default: ""
+      bandit_exclude:
+        description: "Comma-separated paths to exclude from Bandit (relative to working_directory). Empty = scan the whole tree including tests (recommended). Use e.g. tests if you need to drop test dirs from Bandit."
+        required: false
+        type: string
+        default: ""
       bandit_minimum_severity:
         description: "Lowest Bandit severity to report and count toward fail_on_findings (all, low, medium, high). Use medium to ignore low-only issues."
         required: false
@@ -198,6 +203,7 @@ jobs:
           python_version: ${{ inputs.python_version }}
           working_directory: ${{ inputs.working_directory }}
           targets: "."
+          exclude: ${{ inputs.bandit_exclude }}
           fail_on_findings: true
           bandit_config: ${{ inputs.bandit_config || '' }}
           minimum_severity: ${{ inputs.bandit_minimum_severity || 'all' }}

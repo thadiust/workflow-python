@@ -55,7 +55,14 @@ All inputs are optional; defaults assume `requirements.txt` at the repository ro
 | `run_pip_audit_scan` | boolean | `true` | If `false`, the pip-audit job is skipped. |
 | `run_bandit` | boolean | `true` | If `false`, the Bandit job is skipped. |
 | `bandit_config` | string | *(empty)* | Optional path to a Bandit config file relative to `working_directory` (for example `bandit.yaml`). |
+| `bandit_exclude` | string | *(empty)* | Comma-separated paths excluded from Bandit (`--exclude`). Default **empty** scans **everything**, including `tests/` (good for catching risky patterns in test code). Set e.g. `tests` only if you want pytest `assert` noise (B101) out of Bandit without per-line `# nosec`. |
 | `bandit_minimum_severity` | string | `all` | Bandit severity floor: `all`, `low`, `medium`, or `high`. Issues below this level are omitted from the report and do not fail the job. `medium` blocks on medium and high only. |
+
+### When Bandit fails
+
+Open the **bandit-scan** job log: Bandit prints **issue codes** (e.g. **B101**), **severity**, **file**, and a link to the plugin docs. Fix the code, add **`# nosec BXXX`** on a justified exception, or tune with **`bandit_config`** / **`bandit_exclude`** / **`bandit_minimum_severity`** (e.g. `medium` to ignore low-only noise — use with care).
+
+**Pytest and B101:** Bandit flags **`assert`** because it is stripped under **`python -O`**. In **`tests/`**, **`assert`** is normal for pytest. With the default (scan tests), add **`# nosec B101`** on those lines, or set **`bandit_exclude: tests`** if you prefer not to annotate tests.
 
 ## Example: call from another repository
 
@@ -85,6 +92,7 @@ jobs:
       run_gitleaks: true
       run_pip_audit_scan: true
       run_bandit: true
+      # bandit_exclude: "tests"   # optional: omit tests/ from Bandit (e.g. avoid B101 on pytest asserts)
 ```
 
 This workflow is **`workflow_call` only** (full inputs, no 10-key `workflow_dispatch` limit). Call it from an app repo with the **full** `with:` list (see table). To run **manually**, use **`workflow_dispatch`** on the **app** repo (e.g. [`sample-python-app`](https://github.com/thadiust/sample-python-app)), which still calls this file via **`workflow_call`**.

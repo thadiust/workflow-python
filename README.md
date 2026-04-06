@@ -31,6 +31,12 @@ Across these jobs, a **finding** is anything that can fail the pipeline when the
 - **Timeouts:** Ruff uses **`timeout-minutes: 15`**; other jobs use **`timeout-minutes: 30`** so a hung scanner does not burn the runner default (6 hours).
 - **Supply chain:** Callers should reference this workflow with **`@main`** or a **semver tag** (e.g. **`@v1.0.1`**). This project does not require pinning to commit SHAs. **Note:** Each job’s **`uses:`** resolves independently. On **semver tags**, **Ruff** and **pytest** use the **same tag** as **`ci.yml`** (e.g. **`v1.0.1`**). On branch **`main`**, those lines use **`@main`** so CI exercises the latest composite code. **secrets-gitleaks**, **sast-bandit**, and **pip-audit-scan-action** still reference **`@main`** until those repositories publish semver tags and this workflow bumps those lines.
 
+### Releasing a new semver tag (`v1.x.y`)
+
+1. In [`.github/workflows/ci.yml`](.github/workflows/ci.yml), set **`thadiust/workflow-python/.github/actions/ruff@v1.x.y`** and **`…/pytest@v1.x.y`** to match the tag you are about to create (so **`ci.yml@v1.x.y`** and the composites resolve to the same commit).
+2. Commit, create the annotated tag **`v1.x.y`**, push **`main`** and **`git push origin v1.x.y`**.
+3. On **`main`**, follow up with a commit that sets those two lines back to **`@main`** so day-to-day CI on this repo still runs the latest composite code (the **tag** remains a frozen snapshot; verify with **`git show v1.x.y:.github/workflows/ci.yml`**).
+
 ## Inputs
 
 All inputs are optional; defaults assume `requirements.txt` at the repository root.

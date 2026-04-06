@@ -107,11 +107,12 @@ runs:
               echo ""
               echo "Run the same commands locally, then **commit** and **push** again."
               echo ""
-              echo "\\`\\`\\`bash"
+              # Single-quoted fences: backticks in double-quoted echo are command substitution in bash.
+              echo '```bash'
               echo "python -m pip install -r ${{ inputs.requirements_file }}"
               echo "python -m pip install pytest==${{ inputs.pytest_version }}"
               echo "python -m pytest ${{ inputs.pytest_args }}"
-              echo "\\`\\`\\`"
+              echo '```'
               echo ""
               echo "See the job log above for the failing test output."
             } >> "$GITHUB_STEP_SUMMARY"

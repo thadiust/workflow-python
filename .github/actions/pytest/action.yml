@@ -28,9 +28,9 @@ inputs:
     default: "8.4.0"
 
   pytest_args:
-    description: "Arguments passed to pytest (e.g. -q, -k test_name, --maxfail=1)"
+    description: "Space-separated args for pytest (default collects ./tests when present)"
     required: false
-    default: "-q"
+    default: "-q tests"
 
 runs:
   using: "composite"
@@ -90,10 +90,15 @@ runs:
       working-directory: ${{ inputs.working_directory }}
       run: |
         set -euo pipefail
+        # Repo root on PYTHONPATH so tests can `import app` when app lives at project root.
+        export PYTHONPATH="$(pwd):${PYTHONPATH:-}"
+
         pytest_args=()
-        if [ -n "${{ inputs.pytest_args }}" ]; then
-          read -r -a pytest_args <<< "${{ inputs.pytest_args }}"
+        _pa="${{ inputs.pytest_args }}"
+        if [ -z "$_pa" ]; then
+          _pa="-q tests"
         fi
+        read -r -a pytest_args <<< "$_pa"
 
         set +e
         python -m pytest "${pytest_args[@]}"
@@ -111,7 +116,7 @@ runs:
               echo '```bash'
               echo "python -m pip install -r ${{ inputs.requirements_file }}"
               echo "python -m pip install pytest==${{ inputs.pytest_version }}"
-              echo "python -m pytest ${{ inputs.pytest_args }}"
+              echo "python -m pytest $_pa"
               echo '```'
               echo ""
               echo "See the job log above for the failing test output."

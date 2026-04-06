@@ -50,7 +50,7 @@ All inputs are optional; defaults assume `requirements.txt` at the repository ro
 | `run_pytest` | boolean | `true` | If `false`, the pytest job is skipped. |
 | `pytest_requirements_file` | string | `requirements.txt` | Requirements file (relative to `working_directory`) for installing app deps before pytest. |
 | `pytest_version` | string | `8.4.0` | Exact pytest version installed in the test job. |
-| `pytest_args` | string | `-q` | Arguments passed to `pytest`. |
+| `pytest_args` | string | `-q tests` | Arguments passed to `pytest` (default collects `./tests`). |
 | `run_gitleaks` | boolean | `true` | If `false`, the Gitleaks job is skipped. |
 | `run_pip_audit_scan` | boolean | `true` | If `false`, the pip-audit job is skipped. |
 | `run_bandit` | boolean | `true` | If `false`, the Bandit job is skipped. |

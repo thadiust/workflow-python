@@ -78,10 +78,10 @@ on:
         type: string
         default: "8.4.0"
       pytest_args:
-        description: "Arguments passed to pytest"
+        description: "Arguments passed to pytest (default collects ./tests)"
         required: false
         type: string
-        default: "-q"
+        default: "-q tests"
       run_gitleaks:
         description: "Whether to run the Gitleaks secrets scan job (after Ruff when Ruff is enabled)"
         required: false
@@ -208,7 +208,7 @@ jobs:
           working_directory: ${{ inputs.working_directory }}
           requirements_file: ${{ inputs.pytest_requirements_file || 'requirements.txt' }}
           pytest_version: ${{ inputs.pytest_version || '8.4.0' }}
-          pytest_args: ${{ inputs.pytest_args || '-q' }}
+          pytest_args: ${{ inputs.pytest_args || '-q tests' }}
 
   gitleaks-scan:
     needs:

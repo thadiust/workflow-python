@@ -76,7 +76,7 @@ on:
         description: "Exact pytest version for the test job"
         required: false
         type: string
-        default: "8.4.0"
+        default: "9.0.2"
       pytest_args:
         description: "Space-separated pytest args. Leave empty for auto: -q tests if ./tests exists, else -q test if ./test exists, else -q (discovery)."
         required: false
@@ -169,7 +169,7 @@ jobs:
           python_version: ${{ inputs.python_version }}
           working_directory: ${{ inputs.working_directory }}
           requirements_file: ${{ inputs.pytest_requirements_file || 'requirements.txt' }}
-          pytest_version: ${{ inputs.pytest_version || '8.4.0' }}
+          pytest_version: ${{ inputs.pytest_version || '9.0.2' }}
           pytest_args: ${{ inputs.pytest_args }}
 
   gitleaks-scan:

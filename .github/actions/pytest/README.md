@@ -21,5 +21,5 @@ On failure, it writes a short **Job Summary** with copy-paste commands.
 | `working_directory` | `.` | Repo-relative directory to run from. |
 | `requirements_file` | `requirements.txt` | Relative to `working_directory`. |
 | `extra_install_args` | *(empty)* | Extra args passed to `pip install -r ...` (space-separated). |
-| `pytest_version` | `8.4.0` | Exact pytest version string. |
+| `pytest_version` | `9.0.2` | Exact pytest version string. |
 | `pytest_args` | *(empty)* | Space-separated args; **empty** = auto (`tests/` or `test/` or discovery). |

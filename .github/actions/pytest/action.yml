@@ -25,7 +25,7 @@ inputs:
   pytest_version:
     description: "Exact pytest version to install (pin for reproducible CI)"
     required: false
-    default: "8.4.0"
+    default: "9.0.2"
 
   pytest_args:
     description: "Space-separated pytest args. Empty = auto (-q tests if ./tests exists, else -q test if ./test exists, else -q)."

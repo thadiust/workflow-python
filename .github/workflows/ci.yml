@@ -189,7 +189,7 @@ jobs:
 
       - name: Run Gitleaks
         id: gitleaks
-        uses: thadiust/secrets-gitleaks@v1.0.0
+        uses: thadiust/secrets-gitleaks@v1.0.1
         with:
           working_directory: ${{ inputs.working_directory }}
           fail_on_findings: true

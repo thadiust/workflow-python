@@ -22,7 +22,7 @@ This layout **fails fast on lint and tests**, then **secrets**, then **SAST (Ban
 - **`requirements.in`** — what you intend (ranges or top-level pins).
 - **`requirements.txt`** — **fully pinned** output from **`pip-compile`** (transitives included).
 
-Turn **`enforce_pip_tools_lockfile: true`** so CI runs **`pip-compile … -o requirements.txt`** and **`git diff --exit-code`** on the lock: if someone edits **`.in`** without regenerating the lock, the job fails. Point **`pytest_requirements_file`** at the **same lock** as **`requirements_file`** so tests and SCA see one graph.
+Turn **`enforce_pip_tools_lockfile: true`** so CI runs **`actions/setup-python`** with **`python_version`**, then **`pip-compile … -o requirements.txt`** and **`git diff --exit-code`** on the lock: if someone edits **`.in`** without regenerating the lock, the job fails. Point **`pytest_requirements_file`** at the **same lock** as **`requirements_file`** so tests and SCA see one graph.
 
 ### Terminology
 

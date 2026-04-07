@@ -1,0 +1,82 @@
+# Call from other repositories with:
+#   uses: thadiust/workflow-python/.github/workflows/reusable-actionlint.yml@v1.0.7
+# This repo's own actionlint.yml uses ./reusable-actionlint.yml (same ref as the push).
+name: "Reusable actionlint"
+
+on:
+  workflow_call:
+    inputs:
+      actionlint_version:
+        description: "actionlint release version (https://github.com/rhysd/actionlint/releases)"
+        required: false
+        type: string
+        default: "1.7.12"
+      validate_composite_actions:
+        description: "If true, PyYAML-parse every .github/actions/**/action.yml (and action.yaml)"
+        required: false
+        type: boolean
+        default: false
+      validate_root_action_yml:
+        description: "If true, PyYAML-parse action.yml at the repository root (composite action repos)"
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  actionlint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Install actionlint
+        env:
+          ACTIONLINT_VERSION: ${{ inputs.actionlint_version }}
+        run: |
+          set -euo pipefail
+          curl -fsSL "https://github.com/rhysd/actionlint/releases/download/v${ACTIONLINT_VERSION}/actionlint_${ACTIONLINT_VERSION}_linux_amd64.tar.gz" -o /tmp/actionlint.tgz
+          tar -xzf /tmp/actionlint.tgz -C /tmp
+          sudo install -m755 /tmp/actionlint /usr/local/bin/actionlint
+
+      - name: Lint workflow YAML
+        run: actionlint -color
+
+      - name: Setup Python (composite / root action YAML parse)
+        if: ${{ inputs.validate_composite_actions || inputs.validate_root_action_yml }}
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Validate composite action.yml files parse
+        if: ${{ inputs.validate_composite_actions }}
+        run: |
+          set -euo pipefail
+          python -m pip install pyyaml
+          python - <<'PY'
+          import pathlib
+          import sys
+          import yaml
+
+          root = pathlib.Path(".github/actions")
+          if not root.is_dir():
+              sys.exit(0)
+          paths = sorted(
+              p
+              for p in root.rglob("*")
+              if p.is_file() and p.name in ("action.yml", "action.yaml")
+          )
+          if not paths:
+              sys.exit(0)
+          for p in paths:
+              yaml.safe_load(p.read_text(encoding="utf-8"))
+              print("ok", p)
+          PY
+
+      - name: Validate root action.yml parses
+        if: ${{ inputs.validate_root_action_yml }}
+        run: |
+          set -euo pipefail
+          python -m pip install pyyaml
+          python -c "import yaml; yaml.safe_load(open('action.yml', encoding='utf-8'))"

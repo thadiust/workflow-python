@@ -2,11 +2,11 @@
 
 **Branch `main` vs semver tags:** If you use this repo inside the [`security-pipeline`](../README.md) workspace, read **Branch `main` vs release tags** there first. In short: **`main`** floats **Ruff** and **pytest** composites (`@main`); **consumers** should call **`ci.yml@v…`** so Ruff/pytest and **`thadiust/*`** actions match a tagged snapshot.
 
-**Lint in this repo:** [`.github/workflows/actionlint.yml`](.github/workflows/actionlint.yml) runs **actionlint** on **`.github/workflows/`** (including reusable **`ci.yml`**) and **PyYAML**-parses each file under **`.github/actions/`** named `action.yml` or `action.yaml`. That catches workflow typos before tags; full composite semantics are still GitHub’s parser at runtime.
+**Lint in this repo:** [`.github/workflows/actionlint.yml`](.github/workflows/actionlint.yml) calls the reusable workflow **[`.github/workflows/reusable-actionlint.yml`](.github/workflows/reusable-actionlint.yml)** via **`uses: ./.github/workflows/reusable-actionlint.yml`** with **`validate_composite_actions: true`**. Other repositories can call **`thadiust/workflow-python/.github/workflows/reusable-actionlint.yml@v1.0.7`** (pin the same semver as your **`ci.yml`** bump when you want a frozen snapshot). User-visible changes by tag are listed in **[CHANGELOG.md](CHANGELOG.md)**.
 
 Reusable GitHub Actions workflow for Python security checks. App repositories call [`.github/workflows/ci.yml`](.github/workflows/ci.yml), which runs:
 
-1. **[Ruff](https://docs.astral.sh/ruff/)** via the composite at [`.github/actions/ruff`](.github/actions/ruff/README.md). On branch **`main`**, [`ci.yml`](.github/workflows/ci.yml) references **`thadiust/workflow-python/.github/actions/ruff@main`** (not `./…`: with a **reusable workflow** called from another repo, **local `./` paths resolve on the caller’s checkout**, so composites must use the **`owner/repo`** form). **Semver tags** (e.g. **`v1.0.6`**) pin **`…/ruff@v1.0.6`** alongside **`ci.yml@v1.0.6`**. `ruff check` (GitHub annotations) and optional `ruff format --check`, pinned version, **`--force-exclude`**. Toggle with `run_ruff` and related inputs.
+1. **[Ruff](https://docs.astral.sh/ruff/)** via the composite at [`.github/actions/ruff`](.github/actions/ruff/README.md). On branch **`main`**, [`ci.yml`](.github/workflows/ci.yml) references **`thadiust/workflow-python/.github/actions/ruff@main`** (not `./…`: with a **reusable workflow** called from another repo, **local `./` paths resolve on the caller’s checkout**, so composites must use the **`owner/repo`** form). **Semver tags** (e.g. **`v1.0.7`**) pin **`…/ruff@v1.0.7`** alongside **`ci.yml@v1.0.7`**. `ruff check` (GitHub annotations) and optional `ruff format --check`, pinned version, **`--force-exclude`**. Toggle with `run_ruff` and related inputs.
 2. **[pytest](https://pytest.org/)** via [`.github/actions/pytest`](.github/actions/pytest/README.md) (**`@main`** on branch **main**; **`@v1.0.x`** on matching release tags), **in parallel** with Ruff when both are enabled (`run_pytest`). Installs deps from `pytest_requirements_file` and runs `python -m pytest` with `pytest_args`; pytest itself is pinned to `pytest_version`.
 3. **[Gitleaks](https://github.com/gitleaks/gitleaks)** via [`thadiust/secrets-gitleaks`](https://github.com/thadiust/secrets-gitleaks) (**`uses: …/secrets-gitleaks@v1.0.2`** on branch **main** — tag releases in that repo to bump). Secrets; **full git history** — checkout uses `fetch-depth: 0`. **`gitleaks-scan`** **`needs`** **`ruff-lint`** and **`pytest-test`**. See [**Removed the file, but CI still fails?**](https://github.com/thadiust/secrets-gitleaks/blob/main/README.md#removed-the-file-but-ci-still-fails) in the action README.
 4. After Gitleaks: **[Bandit](https://github.com/pycqa/bandit)** via [`thadiust/sast-bandit`](https://github.com/thadiust/sast-bandit) (**`…/sast-bandit@v1.0.1`**) and **[pip-audit](https://github.com/pypa/pip-audit)** via [`thadiust/pip-audit-scan-action`](https://github.com/thadiust/pip-audit-scan-action) (**`…/pip-audit-scan-action@v1.0.0`**) — dependency **vulnerabilities** (in parallel with each other).
@@ -43,13 +43,26 @@ Across these jobs, a **finding** is anything that can fail the pipeline when the
 - **Tests before security scans (deliberate):** **Gitleaks**, **Bandit**, and **pip-audit** run only after **Ruff** and **pytest** succeed (or are skipped via toggles). If **pytest fails**, those security jobs **do not run** — fewer CI minutes and a clear “fix tests first” signal. Some orgs prefer secrets/SCA even on red tests; this workflow does **not** do that unless you fork and change **`needs:`** / **`if:`**.
 - **Parallel jobs vs minutes:** **`runner-info`** logs documented **`runner.*`** fields (`os`, `arch`, `environment`, `name`) once — **`runner.environment`** shows **`github-hosted`** vs **`self-hosted`**. **Ruff** and **pytest** run **in parallel** (two more runners when both are enabled). **Gitleaks** starts only after **both** Ruff and pytest finish (**success or skipped**). After Gitleaks, **Bandit** and **pip-audit** run **at the same time** (two more runners). **Billed minutes** sum across all jobs. Disable jobs you do not need via inputs to save time.
 - **Timeouts:** Ruff uses **`timeout-minutes: 15`**; other jobs use **`timeout-minutes: 30`** so a hung scanner does not burn the runner default (6 hours).
-- **Supply chain:** Callers should reference this workflow with **`@main`** or a **semver tag** (e.g. **`@v1.0.6`**). This project does not require pinning to commit SHAs. **Note:** Each job’s **`uses:`** resolves independently. On **semver tags**, **Ruff** and **pytest** use the **same tag** as **`ci.yml`**. On branch **`main`**, **Ruff** and **pytest** use **`@main`** so CI exercises the latest local composites. **`secrets-gitleaks`** is pinned at **`@v1.0.2`**; **`sast-bandit`** at **`@v1.0.1`**; **`pip-audit-scan-action`** at **`@v1.0.0`** (see [`ci.yml`](.github/workflows/ci.yml)). **`upload_code_scanning`** (default **`true`**) uploads **Gitleaks** and **Bandit** SARIF via **`github/codeql-action/upload-sarif`** — caller workflows need **`permissions: security-events: write`** on the job that **`uses`** this workflow (see example). Upload steps use **`continue-on-error: true`** so missing **GitHub Advanced Security** does not fail the pipeline.
+- **Supply chain:** Callers should reference this workflow with **`@main`** or a **semver tag** (e.g. **`@v1.0.7`**). This project does not require pinning to commit SHAs. **Note:** Each job’s **`uses:`** resolves independently. On **semver tags**, **Ruff** and **pytest** use the **same tag** as **`ci.yml`**. On branch **`main`**, **Ruff** and **pytest** use **`@main`** so CI exercises the latest local composites. **`secrets-gitleaks`** is pinned at **`@v1.0.2`**; **`sast-bandit`** at **`@v1.0.1`**; **`pip-audit-scan-action`** at **`@v1.0.0`** (see [`ci.yml`](.github/workflows/ci.yml)). **`upload_code_scanning`** (default **`true`**) uploads **Gitleaks** and **Bandit** SARIF via **`github/codeql-action/upload-sarif`** — caller workflows need **`permissions: security-events: write`** on the job that **`uses`** this workflow (see example). Upload steps use **`continue-on-error: true`** so missing **GitHub Advanced Security** does not fail the pipeline.
+
+### Reusable actionlint (for other repositories)
+
+[`reusable-actionlint.yml`](.github/workflows/reusable-actionlint.yml) runs **actionlint** on workflow files and optionally validates YAML for:
+
+| Input | Use case |
+|-------|-----------|
+| **`validate_composite_actions: true`** | Repos with **`.github/actions/**/action.yml`** (like this repo). |
+| **`validate_root_action_yml: true`** | Standalone composite actions with **`action.yml`** at repo root. |
+| *(omit both)* | App repos with workflows only (e.g. **sample-python-app**). |
+
+Callers: **`uses: thadiust/workflow-python/.github/workflows/reusable-actionlint.yml@v1.0.7`** (or newer tag).
 
 ### Releasing a new semver tag (`v1.x.y`)
 
-1. In [`.github/workflows/ci.yml`](.github/workflows/ci.yml), set **`thadiust/workflow-python/.github/actions/ruff@v1.x.y`** and **`…/pytest@v1.x.y`** to match the tag you are about to create (so **`ci.yml@v1.x.y`** and the composites resolve to the same commit).
-2. Commit, create the annotated tag **`v1.x.y`**, push **`main`** and **`git push origin v1.x.y`**.
-3. On **`main`**, follow up with a commit that sets **Ruff** and **pytest** back to **`@main`** so day-to-day CI on this repo still runs the latest local composites (the **tag** remains a frozen snapshot; verify with **`git show v1.x.y:.github/workflows/ci.yml`**). When **`secrets-gitleaks`**, **`sast-bandit`**, or **`pip-audit-scan-action`** ship a new semver tag, update the matching **`uses:`** lines and cut a new **`workflow-python`** release if callers should pick it up via **`ci.yml@v…`**.
+1. Update **[CHANGELOG.md](CHANGELOG.md)** with a **`[v1.x.y]`** section.
+2. In [`.github/workflows/ci.yml`](.github/workflows/ci.yml), set **`thadiust/workflow-python/.github/actions/ruff@v1.x.y`** and **`…/pytest@v1.x.y`** to match the tag you are about to create (so **`ci.yml@v1.x.y`** and the composites resolve to the same commit).
+3. Commit, create the annotated tag **`v1.x.y`**, push **`main`** and **`git push origin v1.x.y`**.
+4. On **`main`**, follow up with a commit that sets **Ruff** and **pytest** back to **`@main`** so day-to-day CI on this repo still runs the latest local composites (the **tag** remains a frozen snapshot; verify with **`git show v1.x.y:.github/workflows/ci.yml`**). When **`secrets-gitleaks`**, **`sast-bandit`**, or **`pip-audit-scan-action`** ship a new semver tag, update the matching **`uses:`** lines and cut a new **`workflow-python`** release if callers should pick it up via **`ci.yml@v…`**.
 
 ## Inputs
 
@@ -103,7 +116,7 @@ on:
 
 jobs:
   security:
-    uses: thadiust/workflow-python/.github/workflows/ci.yml@v1.0.6
+    uses: thadiust/workflow-python/.github/workflows/ci.yml@v1.0.7
     with:
       working_directory: "."
       requirements_file: "requirements.txt"
@@ -125,4 +138,4 @@ jobs:
 
 This workflow is **`workflow_call` only** (full inputs, no 10-key `workflow_dispatch` limit). Call it from an app repo with the **full** `with:` list (see table). To run **manually**, use **`workflow_dispatch`** on the **app** repo (e.g. [`sample-python-app`](https://github.com/thadiust/sample-python-app)), which still calls this file via **`workflow_call`**.
 
-For controlled upgrades, call **`uses: …/ci.yml@v1.0.6`** (or another tag) instead of **`@main`**; bump the tag when you intentionally adopt a new release. That tag’s **`ci.yml`** pins **Ruff/pytest** to the same tag and lists **`thadiust/*`** versions (see supply chain note above).
+For controlled upgrades, call **`uses: …/ci.yml@v1.0.7`** (or another tag) instead of **`@main`**; bump the tag when you intentionally adopt a new release. That tag’s **`ci.yml`** pins **Ruff/pytest** to the same tag and lists **`thadiust/*`** versions (see supply chain note above).

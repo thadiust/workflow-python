@@ -1,4 +1,5 @@
 name: actionlint
+
 on:
   push:
     branches: [main]
@@ -9,45 +10,6 @@ permissions:
 
 jobs:
   actionlint:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v6
-
-      - name: Install actionlint
-        run: |
-          set -euo pipefail
-          v=1.7.12
-          curl -fsSL "https://github.com/rhysd/actionlint/releases/download/v${v}/actionlint_${v}_linux_amd64.tar.gz" -o /tmp/actionlint.tgz
-          tar -xzf /tmp/actionlint.tgz -C /tmp
-          sudo install -m755 /tmp/actionlint /usr/local/bin/actionlint
-
-      - name: Lint workflow YAML
-        run: actionlint -color
-
-      - uses: actions/setup-python@v6
-        with:
-          python-version: "3.12"
-
-      - name: Validate composite action.yml files parse
-        run: |
-          set -euo pipefail
-          python -m pip install pyyaml
-          python - <<'PY'
-          import pathlib
-          import sys
-          import yaml
-
-          root = pathlib.Path(".github/actions")
-          if not root.is_dir():
-              sys.exit(0)
-          paths = sorted(
-              p
-              for p in root.rglob("*")
-              if p.is_file() and p.name in ("action.yml", "action.yaml")
-          )
-          if not paths:
-              sys.exit(0)
-          for p in paths:
-              yaml.safe_load(p.read_text(encoding="utf-8"))
-              print("ok", p)
-          PY
+    uses: ./.github/workflows/reusable-actionlint.yml
+    with:
+      validate_composite_actions: true

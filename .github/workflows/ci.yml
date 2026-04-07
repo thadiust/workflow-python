@@ -18,10 +18,25 @@ on:
         type: string
         default: "."
       requirements_file:
-        description: "Requirements file path relative to working_directory"
+        description: "Fully pinned requirements / lock file path relative to working_directory (pip-audit -r; pytest can use the same file for one install graph)"
         required: false
         type: string
         default: "requirements.txt"
+      enforce_pip_tools_lockfile:
+        description: "If true, run pip-compile before pip-audit and fail CI when requirements_file is not reproducible from pip_tools_requirements_in (pip + lockfile discipline)"
+        required: false
+        type: boolean
+        default: false
+      pip_tools_requirements_in:
+        description: "pip-compile input file when enforce_pip_tools_lockfile is true (relative to working_directory)"
+        required: false
+        type: string
+        default: "requirements.in"
+      pip_tools_version:
+        description: "Exact pip-tools version for the lockfile enforcement step"
+        required: false
+        type: string
+        default: "7.5.3"
       python_version:
         description: "Python version for lint and scan jobs"
         required: false
@@ -269,6 +284,52 @@ jobs:
         with:
           fetch-depth: 1
           persist-credentials: false
+
+      - name: Enforce pip-tools lockfile (pip-compile matches requirements_file)
+        if: ${{ inputs.enforce_pip_tools_lockfile }}
+        shell: bash
+        env:
+          WD: ${{ inputs.working_directory }}
+          LOCK_FILE: ${{ inputs.requirements_file }}
+          IN_FILE: ${{ inputs.pip_tools_requirements_in }}
+          PIP_TOOLS_VERSION: ${{ inputs.pip_tools_version }}
+        run: |
+          set -euo pipefail
+          if [ -z "$IN_FILE" ] || [ -z "$LOCK_FILE" ]; then
+            echo "pip_tools_requirements_in and requirements_file must be non-empty when enforce_pip_tools_lockfile is true." >&2
+            exit 1
+          fi
+          case "$IN_FILE" in
+            /*|*..*)
+              echo "pip_tools_requirements_in must be relative with no ..: $IN_FILE" >&2
+              exit 1
+              ;;
+          esac
+          case "$LOCK_FILE" in
+            /*|*..*)
+              echo "requirements_file must be relative with no .. when enforcing lockfile: $LOCK_FILE" >&2
+              exit 1
+              ;;
+          esac
+          cd "$GITHUB_WORKSPACE/$WD"
+          if [ ! -f "$IN_FILE" ]; then
+            echo "Missing pip-compile input file: $WD/$IN_FILE" >&2
+            exit 1
+          fi
+          if [ ! -f "$LOCK_FILE" ]; then
+            echo "Missing lock file: $WD/$LOCK_FILE" >&2
+            exit 1
+          fi
+          python -m pip install --disable-pip-version-check -q "pip-tools==${PIP_TOOLS_VERSION}"
+          pip-compile "$IN_FILE" -o "$LOCK_FILE" --strip-extras
+          cd "$GITHUB_WORKSPACE"
+          if [ "$WD" = "." ]; then
+            REL="$LOCK_FILE"
+          else
+            REL="${WD%/}/$LOCK_FILE"
+          fi
+          echo "Checking $REL is committed in sync with $IN_FILE …"
+          git diff --exit-code -- "$REL"
 
       - name: Run pip-audit scan
         id: pip_audit

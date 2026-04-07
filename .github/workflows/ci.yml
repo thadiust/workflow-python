@@ -285,6 +285,12 @@ jobs:
           fetch-depth: 1
           persist-credentials: false
 
+      - name: Setup Python (lockfile enforcement)
+        if: ${{ inputs.enforce_pip_tools_lockfile }}
+        uses: actions/setup-python@v6
+        with:
+          python-version: ${{ inputs.python_version }}
+
       - name: Enforce pip-tools lockfile (pip-compile matches requirements_file)
         if: ${{ inputs.enforce_pip_tools_lockfile }}
         shell: bash

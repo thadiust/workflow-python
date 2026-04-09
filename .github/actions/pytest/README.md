@@ -2,7 +2,7 @@
 
 Local composite used by the reusable workflow [`ci.yml`](../../workflows/ci.yml) in [`thadiust/workflow-python`](https://github.com/thadiust/workflow-python).
 
-**Referencing this action:** Use `uses: thadiust/workflow-python/.github/actions/pytest@<ref>`, not a `./.github/...` path (local paths resolve in the *caller* repo).
+**Referencing this action:** Use `uses: thadiust/workflow-python/.github/actions/pytest@<ref>`, **not** `uses: ./.github/...` (for reusable workflows, `./` resolves against the **caller** repository). **Consumer repos** should pin the **same semver tag** on `ci.yml` and this action (e.g. both **`@v1.0.8`**). The **`workflow-python`** repo may use **`@main`** on branch `main` for development; do not point consumer apps at **`@main`** unless you want floating behavior.
 
 ## What it runs
 

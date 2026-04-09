@@ -1,5 +1,5 @@
 # Call from other repositories with:
-#   uses: thadiust/workflow-python/.github/workflows/reusable-actionlint.yml@v1.0.7
+#   uses: thadiust/workflow-python/.github/workflows/reusable-actionlint.yml@v1.0.8
 # This repo's own actionlint.yml uses ./reusable-actionlint.yml (same ref as the push).
 name: "Reusable actionlint"
 
@@ -36,9 +36,30 @@ jobs:
           ACTIONLINT_VERSION: ${{ inputs.actionlint_version }}
         run: |
           set -euo pipefail
-          curl -fsSL "https://github.com/rhysd/actionlint/releases/download/v${ACTIONLINT_VERSION}/actionlint_${ACTIONLINT_VERSION}_linux_amd64.tar.gz" -o /tmp/actionlint.tgz
-          tar -xzf /tmp/actionlint.tgz -C /tmp
-          sudo install -m755 /tmp/actionlint /usr/local/bin/actionlint
+          ASSET="actionlint_${ACTIONLINT_VERSION}_linux_amd64.tar.gz"
+          BASE_URL="https://github.com/rhysd/actionlint/releases/download/v${ACTIONLINT_VERSION}"
+          curl -fsSL "${BASE_URL}/actionlint_${ACTIONLINT_VERSION}_checksums.txt" -o /tmp/actionlint_checksums.txt
+          curl -fsSL "${BASE_URL}/${ASSET}" -o "/tmp/${ASSET}"
+
+          EXPECTED="$(awk -v f="${ASSET}" '$2 == f { print $1; exit }' /tmp/actionlint_checksums.txt)"
+          if [ -z "${EXPECTED}" ]; then
+            echo "No SHA256 line for ${ASSET} in upstream checksums (wrong actionlint_version or renamed asset?)." >&2
+            exit 1
+          fi
+          ACTUAL="$(sha256sum "/tmp/${ASSET}" | awk '{ print $1 }')"
+          if [ "${EXPECTED}" != "${ACTUAL}" ]; then
+            echo "SHA256 mismatch for ${ASSET} (expected ${EXPECTED}, got ${ACTUAL})." >&2
+            exit 1
+          fi
+
+          rm -f /tmp/actionlint_checksums.txt
+          tar -xzf "/tmp/${ASSET}" -C /tmp
+          rm -f "/tmp/${ASSET}"
+
+          install_dir="$HOME/.local/bin"
+          mkdir -p "$install_dir"
+          install -m755 /tmp/actionlint "$install_dir/actionlint"
+          echo "$install_dir" >> "$GITHUB_PATH"
 
       - name: Lint workflow YAML
         run: actionlint -color
@@ -53,7 +74,7 @@ jobs:
         if: ${{ inputs.validate_composite_actions }}
         run: |
           set -euo pipefail
-          python -m pip install pyyaml
+          python -m pip install --disable-pip-version-check -q "pyyaml==6.0.3"
           python - <<'PY'
           import pathlib
           import sys
@@ -78,5 +99,5 @@ jobs:
         if: ${{ inputs.validate_root_action_yml }}
         run: |
           set -euo pipefail
-          python -m pip install pyyaml
+          python -m pip install --disable-pip-version-check -q "pyyaml==6.0.3"
           python -c "import yaml; yaml.safe_load(open('action.yml', encoding='utf-8'))"

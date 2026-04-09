@@ -2,7 +2,7 @@
 
 Local composite used by the [`ruff-lint`](../../workflows/ci.yml) job. Callers use the reusable workflow [`ci.yml`](../../workflows/ci.yml) from [`thadiust/workflow-python`](https://github.com/thadiust/workflow-python).
 
-**Referencing this action:** The workflow must use `uses: thadiust/workflow-python/.github/actions/ruff@<ref>`, **not** `uses: ./.github/actions/ruff`. For reusable workflows, `./` is resolved against the **caller** repository (e.g. your app), so a local path would not find this action. Keep `@ref` aligned with the ref you use for `ci.yml` (e.g. both **`@main`** or both **`@v1.0.7`**).
+**Referencing this action:** The workflow must use `uses: thadiust/workflow-python/.github/actions/ruff@<ref>`, **not** `uses: ./.github/actions/ruff`. For reusable workflows, `./` is resolved against the **caller** repository (e.g. your app), so a local path would not find this action. **Consumer repos** should pin the **same semver tag** on `ci.yml` and this action (e.g. both **`@v1.0.8`**). The **`workflow-python`** repo may use **`@main`** on branch `main` to exercise the latest composites during development; do not point consumer apps at **`@main`** unless you intentionally want floating behavior.
 
 ## What it runs
 

@@ -162,7 +162,7 @@ jobs:
 
       # Local paths (`./.github/actions/...`) resolve on the *caller* repo when this workflow is reused — use the workflow-python repo ref.
       - name: Run Ruff
-        uses: thadiust/workflow-python/.github/actions/ruff@main
+        uses: thadiust/workflow-python/.github/actions/ruff@v1.0.8
         with:
           python_version: ${{ inputs.python_version }}
           ruff_version: ${{ inputs.ruff_version }}
@@ -185,7 +185,7 @@ jobs:
           persist-credentials: false
 
       - name: Run pytest
-        uses: thadiust/workflow-python/.github/actions/pytest@main
+        uses: thadiust/workflow-python/.github/actions/pytest@v1.0.8
         with:
           python_version: ${{ inputs.python_version }}
           working_directory: ${{ inputs.working_directory }}
@@ -213,7 +213,7 @@ jobs:
 
       - name: Run Gitleaks
         id: gitleaks
-        uses: thadiust/secrets-gitleaks@v1.0.2
+        uses: thadiust/secrets-gitleaks@v1.0.3
         with:
           working_directory: ${{ inputs.working_directory }}
           fail_on_findings: true
@@ -249,7 +249,7 @@ jobs:
 
       - name: Run Bandit SAST
         id: bandit
-        uses: thadiust/sast-bandit@v1.0.1
+        uses: thadiust/sast-bandit@v1.0.2
         with:
           python_version: ${{ inputs.python_version }}
           working_directory: ${{ inputs.working_directory }}
@@ -339,7 +339,7 @@ jobs:
 
       - name: Run pip-audit scan
         id: pip_audit
-        uses: thadiust/pip-audit-scan-action@v1.0.0
+        uses: thadiust/pip-audit-scan-action@v1.0.1
         with:
           python_version: ${{ inputs.python_version }}
           working_directory: ${{ inputs.working_directory }}

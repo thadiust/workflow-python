@@ -6,6 +6,17 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+## [1.0.8] — 2026-04-09
+
+### Added
+
+- Reusable **[`dependency-review.yml`](.github/workflows/dependency-review.yml)** (`workflow_call`) wrapping **`actions/dependency-review-action@v4`** for PR-time dependency admission control.
+
+### Changed
+
+- **[`reusable-actionlint.yml`](.github/workflows/reusable-actionlint.yml)**: verify **actionlint** tarball **SHA256** against upstream **`actionlint_${version}_checksums.txt`**; install to **`$HOME/.local/bin`** (no **`sudo`**); pin **`pyyaml==6.0.3`** for YAML parse steps.
+- Nested composite pins in **[`ci.yml`](.github/workflows/ci.yml)**: **`thadiust/secrets-gitleaks@v1.0.3`**, **`thadiust/sast-bandit@v1.0.2`**, **`thadiust/pip-audit-scan-action@v1.0.1`**.
+
 ## [1.0.7] — 2026-04-06
 
 ### Added

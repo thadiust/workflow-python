@@ -89,7 +89,7 @@ All inputs are optional; defaults assume `requirements.txt` at the repository ro
 | `pytest_version` | string | `9.0.2` | Exact pytest version installed in the test job (match **`requirements.txt`** or override). |
 | `pytest_args` | string | *(empty)* | Omit for auto: `-q tests` if `./tests` exists, else `-q test` if `./test` exists, else `-q`. Override with e.g. `-q .` or `-q mypkg/tests`. |
 | `run_trivy` | boolean | `true` | If `false`, the Trivy job is skipped. |
-| `trivy_version` | string | `0.65.0` | Exact Trivy release version (no `v` prefix). |
+| `trivy_version` | string | `0.69.3` | Exact Trivy release version (no `v` prefix); must exist upstream. |
 | `trivy_mode` | string | `both` | `fs`, `config`, or `both`. |
 | `trivy_paths` | string | `.` | Space-separated paths relative to `working_directory` for Trivy. |
 | `trivy_severity` | string | `HIGH,CRITICAL` | Comma-separated severities (UNKNOWN, LOW, MEDIUM, HIGH, CRITICAL). |

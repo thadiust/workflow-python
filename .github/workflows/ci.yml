@@ -134,10 +134,10 @@ on:
         type: boolean
         default: true
       trivy_version:
-        description: "Exact Trivy version for the scan job"
+        description: "Exact Trivy version for the scan job (must exist on aquasecurity/trivy releases)"
         required: false
         type: string
-        default: "0.65.0"
+        default: "0.69.3"
       trivy_mode:
         description: "Trivy scan mode: fs, config, or both"
         required: false

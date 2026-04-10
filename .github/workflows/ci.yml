@@ -286,7 +286,7 @@ jobs:
 
       - name: Run Gitleaks
         id: gitleaks
-        uses: thadiust/secrets-gitleaks@v1.0.3
+        uses: thadiust/secrets-gitleaks@main
         with:
           working_directory: ${{ inputs.working_directory }}
           fail_on_findings: true
@@ -322,7 +322,7 @@ jobs:
 
       - name: Run Bandit SAST
         id: bandit
-        uses: thadiust/sast-bandit@v1.0.2
+        uses: thadiust/sast-bandit@main
         with:
           python_version: ${{ inputs.python_version }}
           working_directory: ${{ inputs.working_directory }}
@@ -412,7 +412,7 @@ jobs:
 
       - name: Run pip-audit scan
         id: pip_audit
-        uses: thadiust/pip-audit-scan-action@v1.0.1
+        uses: thadiust/pip-audit-scan-action@main
         with:
           python_version: ${{ inputs.python_version }}
           working_directory: ${{ inputs.working_directory }}

@@ -6,6 +6,10 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+### Changed
+
+- **[`ci.yml`](.github/workflows/ci.yml)** nested **`thadiust/*`** actions use **`@main`** (**`secrets-gitleaks`**, **`sast-bandit`**, **`pip-audit-scan-action`**) while this branch tracks floating solo-dev refs; switch to semver tags when you want reproducible pins.
+
 ### Added
 
 - **`trivy-scan`** job and inputs (**`run_trivy`**, **`trivy_*`**) calling **`thadiust/trivy-scan@main`**, with optional SARIF upload under **`upload_code_scanning`**.

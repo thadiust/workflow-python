@@ -6,6 +6,15 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+### Added
+
+- **`trivy-scan`** job and inputs (**`run_trivy`**, **`trivy_*`**) calling **`thadiust/trivy-scan@main`**, with optional SARIF upload under **`upload_code_scanning`**.
+- **`concurrency`** on **[`actionlint.yml`](.github/workflows/actionlint.yml)** and **[`dependency-review.yml`](.github/workflows/dependency-review.yml)** (cancel in-progress per ref).
+
+### Removed
+
+- **`.github/actionlint.yaml`** ignore for **`thadiust/trivy-scan`** now that the action repository is published.
+
 ## [1.0.8] — 2026-04-09
 
 ### Added

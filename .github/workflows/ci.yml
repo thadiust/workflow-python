@@ -128,8 +128,44 @@ on:
         type: string
         default: "all"
 
+      run_trivy:
+        description: "Whether to run Trivy filesystem + config scans (Wave 1; repository/IaC security)"
+        required: false
+        type: boolean
+        default: true
+      trivy_version:
+        description: "Exact Trivy version for the scan job"
+        required: false
+        type: string
+        default: "0.65.0"
+      trivy_mode:
+        description: "Trivy scan mode: fs, config, or both"
+        required: false
+        type: string
+        default: "both"
+      trivy_paths:
+        description: "Space-separated paths relative to working_directory to scan with Trivy"
+        required: false
+        type: string
+        default: "."
+      trivy_severity:
+        description: "Comma-separated severities to include (UNKNOWN,LOW,MEDIUM,HIGH,CRITICAL)"
+        required: false
+        type: string
+        default: "HIGH,CRITICAL"
+      trivy_ignore_unfixed:
+        description: "If true, ignore vulnerabilities without a fix"
+        required: false
+        type: boolean
+        default: true
+      trivy_fail_on_findings:
+        description: "Fail the Trivy job when one or more findings are reported"
+        required: false
+        type: boolean
+        default: true
+
       upload_code_scanning:
-        description: "Upload Bandit and Gitleaks SARIF to GitHub Code Scanning (Security tab / PR). Caller job needs security-events: write. No-op if Advanced Security is off (upload step uses continue-on-error)."
+        description: "Upload Bandit, Gitleaks, and Trivy SARIF to GitHub Code Scanning (Security tab / PR). Caller job needs security-events: write. No-op if Advanced Security is off (upload step uses continue-on-error)."
         required: false
         type: boolean
         default: true
@@ -192,6 +228,43 @@ jobs:
           requirements_file: ${{ inputs.pytest_requirements_file || 'requirements.txt' }}
           pytest_version: ${{ inputs.pytest_version || '9.0.2' }}
           pytest_args: ${{ inputs.pytest_args }}
+
+  trivy-scan:
+    if: ${{ inputs.run_trivy && !cancelled() }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      security-events: write
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Run Trivy
+        id: trivy
+        uses: thadiust/trivy-scan@main
+        with:
+          trivy_version: ${{ inputs.trivy_version }}
+          working_directory: ${{ inputs.working_directory }}
+          mode: ${{ inputs.trivy_mode }}
+          paths: ${{ inputs.trivy_paths || '.' }}
+          severity: ${{ inputs.trivy_severity || 'HIGH,CRITICAL' }}
+          ignore_unfixed: ${{ inputs.trivy_ignore_unfixed != false }}
+          fail_on_findings: ${{ inputs.trivy_fail_on_findings != false }}
+          write_sarif: ${{ inputs.upload_code_scanning }}
+          sarif_filename: trivy-results.sarif
+
+      - name: Upload Trivy SARIF to GitHub Code Scanning
+        if: ${{ inputs.upload_code_scanning != false && (success() || failure()) && steps.trivy.outputs.sarif_path != '' }}
+        continue-on-error: true
+        uses: github/codeql-action/upload-sarif@v4
+        with:
+          sarif_file: ${{ steps.trivy.outputs.sarif_path }}
+          category: trivy
 
   gitleaks-scan:
     needs:

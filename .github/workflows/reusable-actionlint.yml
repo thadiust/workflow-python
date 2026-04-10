@@ -36,6 +36,7 @@ jobs:
           ACTIONLINT_VERSION: ${{ inputs.actionlint_version }}
         run: |
           set -euo pipefail
+          # Ubuntu/Linux amd64 only. Self-hosted runners may need `sha256sum` and an executable temp dir.
           ASSET="actionlint_${ACTIONLINT_VERSION}_linux_amd64.tar.gz"
           BASE_URL="https://github.com/rhysd/actionlint/releases/download/v${ACTIONLINT_VERSION}"
           curl -fsSL "${BASE_URL}/actionlint_${ACTIONLINT_VERSION}_checksums.txt" -o /tmp/actionlint_checksums.txt

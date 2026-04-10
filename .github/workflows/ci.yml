@@ -513,9 +513,10 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: trivy-ci-image
+          path: trivy-ci-image-artifact
 
       - name: Load image into Docker
-        run: docker load -i trivy-ci-image.tar
+        run: docker load -i trivy-ci-image-artifact/trivy-ci-image.tar
 
       - name: Run Trivy (container image)
         id: trivy_image

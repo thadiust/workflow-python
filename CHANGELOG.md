@@ -8,12 +8,14 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ### Changed
 
+- **Trivy** job id **`trivy-scan` → `trivy-repo-scan`** with **`needs: [ruff-lint, pytest-test]`** (was fully parallel / no **`needs`**).
 - Default **`trivy_version`** **`0.69.3`** (upstream had no **`v0.65.0`** release; Trivy install was 404).
 - **[`ci.yml`](.github/workflows/ci.yml)** nested **`thadiust/*`** actions use **`@main`** (**`secrets-gitleaks`**, **`sast-bandit`**, **`pip-audit-scan-action`**) while this branch tracks floating solo-dev refs; switch to semver tags when you want reproducible pins.
 
 ### Added
 
-- **`trivy-scan`** job and inputs (**`run_trivy`**, **`trivy_*`**) calling **`thadiust/trivy-scan@main`**, with optional SARIF upload under **`upload_code_scanning`**.
+- **`trivy-repo-scan`** (replaces the old isolated **`trivy-scan`** job): runs after **Ruff** + **pytest**, **in parallel with Gitleaks**, using **`thadiust/trivy-scan@main`** (**`scan_kind: filesystem`**) and SARIF category **`trivy`**.
+- Optional **Docker** branch: **`docker-build`** (**`needs`** **Ruff**, **pytest**, **`trivy-repo-scan`**) saves the image tarball; leaf **`trivy-image-scan`** loads it and runs **`trivy image`** (**SARIF** category **`trivy-image`**). Inputs: **`run_docker_build`**, **`dockerfile`**, **`docker_context`**, **`docker_image_tag`**, **`run_trivy_image_scan`**.
 - **`concurrency`** on **[`actionlint.yml`](.github/workflows/actionlint.yml)** and **[`dependency-review.yml`](.github/workflows/dependency-review.yml)** (cancel in-progress per ref).
 
 ### Removed

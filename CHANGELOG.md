@@ -8,6 +8,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ### Changed
 
+- Reusable **[`dependency-review.yml`](.github/workflows/dependency-review.yml)**: removed **`concurrency`** so PR runs do not deadlock when the **caller** workflow uses the same workflow **name** and **concurrency** **group** (GitHub detects a lock between parent and **`workflow_call`**).
 - **Trivy** job id **`trivy-scan` → `trivy-repo-scan`** with **`needs: [ruff-lint, pytest-test]`** (was fully parallel / no **`needs`**).
 - Default **`trivy_version`** **`0.69.3`** (upstream had no **`v0.65.0`** release; Trivy install was 404).
 - **[`ci.yml`](.github/workflows/ci.yml)** nested **`thadiust/*`** actions use **`@main`** (**`secrets-gitleaks`**, **`sast-bandit`**, **`pip-audit-scan-action`**) while this branch tracks floating solo-dev refs; switch to semver tags when you want reproducible pins.
@@ -15,8 +16,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 ### Added
 
 - **`trivy-repo-scan`** (replaces the old isolated **`trivy-scan`** job): runs after **Ruff** + **pytest**, **in parallel with Gitleaks**, using **`thadiust/trivy-scan@main`** (**`scan_kind: filesystem`**) and SARIF category **`trivy`**.
-- Optional **Docker** branch: **`docker-build`** (**`needs`** **Ruff**, **pytest**, **`trivy-repo-scan`**) saves the image tarball; leaf **`trivy-image-scan`** loads it and runs **`trivy image`** (**SARIF** category **`trivy-image`**). Inputs: **`run_docker_build`**, **`dockerfile`**, **`docker_context`**, **`docker_image_tag`**, **`run_trivy_image_scan`**.
-- **`concurrency`** on **[`actionlint.yml`](.github/workflows/actionlint.yml)** and **[`dependency-review.yml`](.github/workflows/dependency-review.yml)** (cancel in-progress per ref).
+- Optional **Docker** branch: **`docker-build`** (**`needs`** **Ruff**, **pytest**, **`trivy-repo-scan`**) saves the image tarball; leaf **`trivy-image-scan`** loads it and runs **`trivy image`** (**SARIF** category **`trivy-image`**). Inputs: **`run_docker_build`**, **`dockerfile`**, **`docker_context`**, **`docker_image_tag`**, **`run_trivy_image_scan`**, **`trivy_image_fail_on_findings`** (default **false** so base-image OS CVEs do not fail CI by default).
+- **`concurrency`** on **[`actionlint.yml`](.github/workflows/actionlint.yml)** (cancel in-progress per ref).
 
 ### Removed
 

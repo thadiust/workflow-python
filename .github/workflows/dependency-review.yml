@@ -3,9 +3,8 @@ name: Dependency Review
 on:
   workflow_call:
 
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+# Do not set concurrency here: callers already define it, and matching
+# group/name with the parent workflow triggers a GitHub deadlock on PRs.
 
 permissions:
   contents: read

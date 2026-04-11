@@ -94,7 +94,8 @@ All inputs are optional; defaults assume `requirements.txt` at the repository ro
 | `trivy_paths` | string | `.` | Space-separated paths relative to `working_directory` for Trivy. |
 | `trivy_severity` | string | `HIGH,CRITICAL` | Comma-separated severities (UNKNOWN, LOW, MEDIUM, HIGH, CRITICAL). |
 | `trivy_ignore_unfixed` | boolean | `true` | If `true`, ignore vulnerabilities without a fix. |
-| `trivy_fail_on_findings` | boolean | `true` | If `true`, the Trivy job fails when findings are reported. |
+| `trivy_fail_on_findings` | boolean | `true` | If `true`, the **repository** Trivy job (**fs**/**config**) fails when findings are reported. |
+| `trivy_image_fail_on_findings` | boolean | `false` | If `true`, the **container image** Trivy job fails on findings. Default **false** — image layers include base-OS CVEs; SARIF (**`trivy-image`**) still uploads when **`upload_code_scanning`** is on. |
 | `run_docker_build` | boolean | `false` | If `true`, build a Docker image after **`trivy-repo-scan`** and upload a tarball for **`trivy-image-scan`**. |
 | `dockerfile` | string | `Dockerfile` | Dockerfile path relative to the build context. |
 | `docker_context` | string | *(empty)* | Context directory relative to repo root; empty uses **`working_directory`**. |

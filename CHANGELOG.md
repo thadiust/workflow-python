@@ -6,6 +6,10 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+### Added
+
+- **[`MAINTAINERS.md`](MAINTAINERS.md):** default version bump → **`scripts/refresh-pip-constraints.sh`** map (this repo + **sast-bandit** / **pip-audit-scan-action**), keep **dogfood** + **scheduled** workflows on, **Dependabot** and **CHANGELOG** guidance.
+
 ### Fixed
 
 - **Dogfood / Bandit:** **`sast-bandit`** now installs **`bandit[sarif]`** so **Code Scanning** SARIF works on PyPI **Bandit**; dogfood test uses **`# nosec B101`** for pytest **`assert`**.

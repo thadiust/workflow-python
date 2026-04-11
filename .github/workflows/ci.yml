@@ -276,7 +276,7 @@ jobs:
 
       - name: Run Trivy (repository)
         id: trivy
-        uses: thadiust/trivy-scan@dbd96a8cc9fe913eaedbc0b9059d02229b50b3c3
+        uses: thadiust/trivy-scan@main
         with:
           scan_kind: filesystem
           trivy_version: ${{ inputs.trivy_version }}
@@ -520,7 +520,7 @@ jobs:
 
       - name: Run Trivy (container image)
         id: trivy_image
-        uses: thadiust/trivy-scan@dbd96a8cc9fe913eaedbc0b9059d02229b50b3c3
+        uses: thadiust/trivy-scan@main
         with:
           scan_kind: image
           image_ref: ${{ inputs.docker_image_tag }}

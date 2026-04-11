@@ -16,7 +16,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 ### Added
 
 - **`trivy-repo-scan`** (replaces the old isolated **`trivy-scan`** job): runs after **Ruff** + **pytest**, **in parallel with Gitleaks**, using **`thadiust/trivy-scan@main`** (**`scan_kind: filesystem`**) and SARIF category **`trivy`**.
-- Optional **Docker** branch: **`docker-build`** (**`needs`** **Ruff**, **pytest**, **`trivy-repo-scan`**) saves the image tarball; leaf **`trivy-image-scan`** loads it and runs **`trivy image`** (**SARIF** category **`trivy-image`**). Inputs: **`run_docker_build`**, **`dockerfile`**, **`docker_context`**, **`docker_image_tag`**, **`run_trivy_image_scan`**, **`trivy_image_fail_on_findings`** (default **false** so base-image OS CVEs do not fail CI by default).
+- Optional **Docker** branch: **`docker-build`** (**`needs`** **Ruff**, **pytest**, **`trivy-repo-scan`**) saves the image tarball; leaf **`trivy-image-scan`** loads it and runs **`trivy image`** (**SARIF** category **`trivy-image`**). Inputs: **`run_docker_build`**, **`dockerfile`**, **`docker_context`**, **`docker_image_tag`**, **`run_trivy_image_scan`**, **`trivy_image_fail_on_findings`** (default **true**, same strictness as repo Trivy; callers may set **false** with an explicit policy note if base-image noise is unacceptable for merges).
 - **`concurrency`** on **[`actionlint.yml`](.github/workflows/actionlint.yml)** (cancel in-progress per ref).
 
 ### Removed

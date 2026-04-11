@@ -164,10 +164,10 @@ on:
         type: boolean
         default: true
       trivy_image_fail_on_findings:
-        description: "Fail the Trivy container image job when findings are reported. Base images often include HIGH/CRITICAL OS CVEs; default false still runs the scan and uploads SARIF (category trivy-image) without failing CI."
+        description: "Fail the Trivy container image job when findings are reported (same idea as trivy_fail_on_findings for the repo). Default true — CI stays strict. Set false only when you still want SARIF/Code Scanning signal but base-image OS noise would block merges (document that choice in the caller)."
         required: false
         type: boolean
-        default: false
+        default: true
 
       run_docker_build:
         description: "Build a Docker image after repo Trivy (trivy-repo-scan) succeeds; image is saved and passed to an optional Trivy image scan job"
@@ -533,7 +533,7 @@ jobs:
           working_directory: ${{ inputs.working_directory }}
           severity: ${{ inputs.trivy_severity || 'HIGH,CRITICAL' }}
           ignore_unfixed: ${{ inputs.trivy_ignore_unfixed != false }}
-          fail_on_findings: ${{ inputs.trivy_image_fail_on_findings == true }}
+          fail_on_findings: ${{ inputs.trivy_image_fail_on_findings != false }}
           write_sarif: ${{ inputs.upload_code_scanning }}
           sarif_filename: trivy-image-results.sarif
 

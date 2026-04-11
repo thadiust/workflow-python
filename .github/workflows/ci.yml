@@ -78,7 +78,7 @@ on:
         type: boolean
         default: true
       run_pytest:
-        description: "Whether to run pytest (runs in parallel with Ruff when both are enabled)"
+        description: "Whether to run pytest (after Ruff and Gitleaks when those jobs are enabled)"
         required: false
         type: boolean
         default: true
@@ -98,7 +98,7 @@ on:
         type: string
         default: ""
       run_gitleaks:
-        description: "Whether to run the Gitleaks secrets scan job (after Ruff when Ruff is enabled)"
+        description: "Whether to run the Gitleaks secrets scan job (in parallel with Ruff when both are enabled)"
         required: false
         type: boolean
         default: true

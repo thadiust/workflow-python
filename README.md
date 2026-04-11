@@ -97,7 +97,7 @@ All inputs are optional; defaults assume `requirements.txt` at the repository ro
 | `trivy_ignore_unfixed` | boolean | `true` | If `true`, ignore vulnerabilities without a fix. |
 | `trivy_fail_on_findings` | boolean | `true` | If `true`, the **repository** Trivy job (**fs**/**config**) fails when findings are reported. |
 | `trivy_image_fail_on_findings` | boolean | `true` | If `true`, the **container image** Trivy job fails on findings (aligned with **`trivy_fail_on_findings`**). Set **`false`** only if you accept a green CI while still uploading SARIF — e.g. noisy base images — and document why in the caller repo. |
-| `run_docker_build` | boolean | `false` | If `true`, build a Docker image only after **Gitleaks**, **Trivy repo**, **Bandit**, and **pip-audit** have each succeeded or been skipped (toggle off), then upload a tarball for **`trivy-image-scan`**. |
+| `run_docker_build` | boolean | `false` | If `true`, build a Docker image only after **Ruff**, **Gitleaks**, **pytest**, **Trivy repo**, **Bandit**, and **pip-audit** have each succeeded or been skipped (toggle off), then upload a tarball for **`trivy-image-scan`**. |
 | `dockerfile` | string | `Dockerfile` | Dockerfile path relative to the build context. |
 | `docker_context` | string | *(empty)* | Context directory relative to repo root; empty uses **`working_directory`**. |
 | `docker_image_tag` | string | `workflow-python-ci:scan` | Local tag for **`docker build`**, **`docker save`/`load`**, and **`trivy image`**. |

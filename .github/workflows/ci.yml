@@ -214,8 +214,8 @@ jobs:
           echo "runner.environment=${{ runner.environment }}"
           echo "runner.name=${{ runner.name }}"
 
-  # Ruff + pytest first; then Gitleaks and Trivy repo scan in parallel; Bandit and pip-audit after Gitleaks.
-  # Docker build waits for Gitleaks + repo Trivy (no image if secrets scan failed). Then Trivy image scan (leaf).
+  # Ruff + pytest first (build/test gate). Then Gitleaks, Trivy repo, Bandit, and pip-audit in parallel (DevSecOps wave).
+  # Docker build runs only after all of those succeed (or the job was turned off). Then Trivy image scan (leaf).
   ruff-lint:
     if: ${{ inputs.run_ruff }}
     runs-on: ubuntu-latest
@@ -340,9 +340,8 @@ jobs:
   bandit-scan:
     needs:
       - ruff-lint
-      - gitleaks-scan
       - pytest-test
-    if: ${{ inputs.run_bandit && !cancelled() && (needs['ruff-lint'].result == 'success' || needs['ruff-lint'].result == 'skipped') && (needs['gitleaks-scan'].result == 'success' || needs['gitleaks-scan'].result == 'skipped') && (needs['pytest-test'].result == 'success' || needs['pytest-test'].result == 'skipped') }}
+    if: ${{ inputs.run_bandit && !cancelled() && (needs['ruff-lint'].result == 'success' || needs['ruff-lint'].result == 'skipped') && (needs['pytest-test'].result == 'success' || needs['pytest-test'].result == 'skipped') }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
     permissions:
@@ -381,9 +380,8 @@ jobs:
   pip-audit-scan:
     needs:
       - ruff-lint
-      - gitleaks-scan
       - pytest-test
-    if: ${{ inputs.run_pip_audit_scan && !cancelled() && (needs['ruff-lint'].result == 'success' || needs['ruff-lint'].result == 'skipped') && (needs['gitleaks-scan'].result == 'success' || needs['gitleaks-scan'].result == 'skipped') && (needs['pytest-test'].result == 'success' || needs['pytest-test'].result == 'skipped') }}
+    if: ${{ inputs.run_pip_audit_scan && !cancelled() && (needs['ruff-lint'].result == 'success' || needs['ruff-lint'].result == 'skipped') && (needs['pytest-test'].result == 'success' || needs['pytest-test'].result == 'skipped') }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
 
@@ -461,7 +459,9 @@ jobs:
       - pytest-test
       - gitleaks-scan
       - trivy-repo-scan
-    if: ${{ inputs.run_docker_build && !cancelled() && (needs['ruff-lint'].result == 'success' || needs['ruff-lint'].result == 'skipped') && (needs['pytest-test'].result == 'success' || needs['pytest-test'].result == 'skipped') && (needs['gitleaks-scan'].result == 'success' || needs['gitleaks-scan'].result == 'skipped') && (needs['trivy-repo-scan'].result == 'success' || needs['trivy-repo-scan'].result == 'skipped') }}
+      - bandit-scan
+      - pip-audit-scan
+    if: ${{ inputs.run_docker_build && !cancelled() && (needs['ruff-lint'].result == 'success' || needs['ruff-lint'].result == 'skipped') && (needs['pytest-test'].result == 'success' || needs['pytest-test'].result == 'skipped') && (needs['gitleaks-scan'].result == 'success' || (needs['gitleaks-scan'].result == 'skipped' && inputs.run_gitleaks == false)) && (needs['trivy-repo-scan'].result == 'success' || (needs['trivy-repo-scan'].result == 'skipped' && inputs.run_trivy == false)) && (needs['bandit-scan'].result == 'success' || (needs['bandit-scan'].result == 'skipped' && inputs.run_bandit == false)) && (needs['pip-audit-scan'].result == 'success' || (needs['pip-audit-scan'].result == 'skipped' && inputs.run_pip_audit_scan == false)) }}
     runs-on: ubuntu-latest
     timeout-minutes: 45
 

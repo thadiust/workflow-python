@@ -13,7 +13,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ### Changed
 
-- **README** / **[`ORG_PORTABILITY.md`](ORG_PORTABILITY.md):** release checklist ties **`ruff_version`** / **`pytest_version`** / **`pip_tools`** / **PyYAML** bumps to **`scripts/refresh-pip-constraints.sh`**.
+- **README** / **[`ORG_PORTABILITY.md`](ORG_PORTABILITY.md):** **`pip --require-hashes`** for nested **`sast-bandit`** / **`pip-audit-scan-action`** defaults; release checklist ties **`ruff_version`** / **`pytest_version`** / **`pip_tools`** / **PyYAML`** (and forked Bandit/pip-audit) bumps to each repo’s **`scripts/refresh-pip-constraints.sh`**.
 - **[`reusable-actionlint.yml`](.github/workflows/reusable-actionlint.yml)**: **PyYAML** via **`install-pyyaml-hashed`** instead of plain **`pip install`**.
 - **Lockfile enforcement** in **`ci.yml`**: default **`pip-tools`** via **`install-pip-tools-hashed`**; non-default **`pip_tools_version`** still uses unhashed **`pip install`**.
 - **Ruff** / **pytest** composites: default tool versions use **`pip --require-hashes`** when bundled constraint files exist.

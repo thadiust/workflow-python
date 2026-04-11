@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 # Regenerate hash constraint files after bumping default tool versions in ci.yml / composites.
+# Bandit / pip-audit constraints live in sast-bandit and scan-pip-audit: each repo has scripts/refresh-pip-constraints.sh.
 # Requires: Python 3.11 + pip-tools (pip install pip-tools).
 set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"

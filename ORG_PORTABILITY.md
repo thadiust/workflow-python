@@ -30,4 +30,4 @@ Hash-pinned Python installs (**`ruff`**, **`pytest`**, **`pip-tools`**, **`PyYAM
 
 ## Release hygiene
 
-After mechanical replace, run **[`scripts/refresh-pip-constraints.sh`](scripts/refresh-pip-constraints.sh)** whenever you bump default tool versions, then commit the updated **`constraints*.txt`** files.
+After mechanical replace, run **[`scripts/refresh-pip-constraints.sh`](scripts/refresh-pip-constraints.sh)** whenever you bump **`ruff_version`**, **`pytest_version`**, default **`pip_tools_version`**, or the **PyYAML** version used by **`install-pyyaml-hashed`**, then commit the updated **`constraints*.txt`** files. If you skip this after a bump, **`ci.yml`** still runs but composites may log **`::warning`** and install those packages **without** **`--require-hashes`** until matching **`constraints/ruff-X.Y.Z.txt`** (etc.) exist.

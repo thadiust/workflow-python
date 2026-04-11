@@ -13,6 +13,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ### Changed
 
+- **README** / **[`ORG_PORTABILITY.md`](ORG_PORTABILITY.md):** release checklist ties **`ruff_version`** / **`pytest_version`** / **`pip_tools`** / **PyYAML** bumps to **`scripts/refresh-pip-constraints.sh`**.
 - **[`reusable-actionlint.yml`](.github/workflows/reusable-actionlint.yml)**: **PyYAML** via **`install-pyyaml-hashed`** instead of plain **`pip install`**.
 - **Lockfile enforcement** in **`ci.yml`**: default **`pip-tools`** via **`install-pip-tools-hashed`**; non-default **`pip_tools_version`** still uses unhashed **`pip install`**.
 - **Ruff** / **pytest** composites: default tool versions use **`pip --require-hashes`** when bundled constraint files exist.
@@ -28,7 +29,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 - **[`dogfood-ci.yml`](.github/workflows/dogfood-ci.yml)** integration run of full **`ci.yml`** against **[`dogfood/`](dogfood/)**; **[`scheduled-security-scan.yml`](.github/workflows/scheduled-security-scan.yml)** weekly **`workflow_dispatch`** / cron. **[`ORG_PORTABILITY.md`](ORG_PORTABILITY.md)** (replace **`thadiust/…`**), **[`SECURITY.md`](SECURITY.md)** (disclosure policy).
 - Hash-pinned installs: **[`install-pyyaml-hashed`](.github/actions/install-pyyaml-hashed/action.yml)** (**PyYAML** for actionlint), **[`install-pip-tools-hashed`](.github/actions/install-pip-tools-hashed/action.yml)** (default **`pip-tools==7.5.3`** lockfile step), **`constraints/`** under **[`ruff`](.github/actions/ruff/constraints/)** and **[`pytest`](.github/actions/pytest/constraints/)** composites; **[`scripts/refresh-pip-constraints.sh`](scripts/refresh-pip-constraints.sh)** to regenerate after version bumps.
-- **`workflow_call`** inputs **`gitleaks_version`**, **`bandit_version`**, **`pip_audit_version`**, **`run_runner_info`**.
+- **`workflow_call`** inputs **`gitleaks_version`**, **`bandit_version`**, **`bandit_targets`**, **`pip_audit_version`**, **`run_runner_info`**.
 - **`trivy-repo-scan`** (replaces the old isolated **`trivy-scan`** job): uses **`thadiust/trivy-scan@main`** (**`scan_kind: filesystem`**) and SARIF category **`trivy`**.
 - Optional **Docker** branch: **`docker-build`** waits on **Ruff**, **Gitleaks**, **pytest**, **Trivy repo**, **Bandit**, and **pip-audit**, then saves the image tarball; leaf **`trivy-image-scan`** loads it and runs **`trivy image`** (**SARIF** category **`trivy-image`**). Inputs: **`run_docker_build`**, **`dockerfile`**, **`docker_context`**, **`docker_image_tag`**, **`run_trivy_image_scan`**, **`trivy_image_fail_on_findings`** (default **true**, same strictness as repo Trivy; callers may set **false** with an explicit policy note if base-image noise is unacceptable for merges).
 - **`concurrency`** on **[`actionlint.yml`](.github/workflows/actionlint.yml)** (cancel in-progress per ref).

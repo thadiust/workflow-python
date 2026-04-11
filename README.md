@@ -55,7 +55,7 @@ Across these jobs, a **finding** is anything that can fail the pipeline when the
 
 ### Opinionated `workflow_call` inputs
 
-**`ci.yml`** forwards **tool versions** (**`gitleaks_version`**, **`bandit_version`**, **`pip_audit_version`**) and many toggles. It still **does not** expose every composite knob (e.g. Bandit **`targets`** / **`report_format`**, Gitleaks **`baseline_path`**, pip-audit **`report_file`**). For those, **fork** and extend **`workflow_call`** inputs or wrap a job.
+**`ci.yml`** forwards **tool versions** (**`gitleaks_version`**, **`bandit_version`**, **`pip_audit_version`**) and **`bandit_targets`**. It still **does not** expose every composite knob (e.g. Bandit **`report_format`**, Gitleaks **`baseline_path`**, pip-audit **`report_file`**). For those, **fork** and extend **`workflow_call`** inputs or wrap a job.
 
 - **Token scope:** The workflow sets **`permissions: contents: read`** so the default `GITHUB_TOKEN` is not granted write access it does not need.
 - **Checkout:** Jobs use **`persist-credentials: false`** so the credential helper is not left configured for later steps. Gitleaks uses **`fetch-depth: 0`** (full history); Trivy repo/image, Bandit, and pip-audit use **`fetch-depth: 1`** (current commit only) to avoid cloning full history on extra runners. The built image is passed to **Trivy image** with **`upload-artifact`** / **`download-artifact`** (**1-day** retention on the tarball). **Do not bake secrets** into images; confirm **artifact read** permissions match org policy (anyone who can read workflow artifacts can download the tarball for the retention window).
@@ -83,9 +83,10 @@ Callers: **`uses: thadiust/workflow-python/.github/workflows/reusable-actionlint
 ### Releasing a new semver tag (`v1.x.y`)
 
 1. Update **[CHANGELOG.md](CHANGELOG.md)** with a **`[v1.x.y]`** section.
-2. In [`.github/workflows/ci.yml`](.github/workflows/ci.yml), set **`thadiust/workflow-python/.github/actions/ruff@v1.x.y`** and **`…/pytest@v1.x.y`** to match the tag you are about to create (so **`ci.yml@v1.x.y`** and the composites resolve to the same commit). Pin **`thadiust/trivy-scan`**, **`secrets-gitleaks`**, **`sast-bandit`**, and **`pip-audit-scan-action`** to the semver tags you want that release to ship.
-3. Commit, create the annotated tag **`v1.x.y`**, push **`main`** and **`git push origin v1.x.y`**.
-4. On **`main`**, follow up with a commit that sets **Ruff**, **pytest**, **Trivy**, **`secrets-gitleaks`**, **`sast-bandit`**, and **`pip-audit-scan-action`** back to **`@main`** so day-to-day CI floats latest (the **tag** remains a frozen snapshot; verify with **`git show v1.x.y:.github/workflows/ci.yml`**). When cutting a release tag, pin those **`uses:`** lines to **`@v…`** as needed for reproducibility.
+2. **Pip hash constraints:** If you change default **`ruff_version`**, **`pytest_version`**, **`pip_tools_version`** (default **7.5.3**), or the **PyYAML** version bundled in **[`install-pyyaml-hashed`](.github/actions/install-pyyaml-hashed/)**, run **[`scripts/refresh-pip-constraints.sh`](scripts/refresh-pip-constraints.sh)** and commit the updated **`constraints*.txt`** files. Skipping this keeps CI working but emits **`::warning`** and uses unhashed **`pip install`** for those tools (see **[`ORG_PORTABILITY.md`](ORG_PORTABILITY.md)**).
+3. In [`.github/workflows/ci.yml`](.github/workflows/ci.yml), set **`thadiust/workflow-python/.github/actions/ruff@v1.x.y`** and **`…/pytest@v1.x.y`** to match the tag you are about to create (so **`ci.yml@v1.x.y`** and the composites resolve to the same commit). Pin **`thadiust/trivy-scan`**, **`secrets-gitleaks`**, **`sast-bandit`**, and **`pip-audit-scan-action`** to the semver tags you want that release to ship.
+4. Commit, create the annotated tag **`v1.x.y`**, push **`main`** and **`git push origin v1.x.y`**.
+5. On **`main`**, follow up with a commit that sets **Ruff**, **pytest**, **Trivy**, **`secrets-gitleaks`**, **`sast-bandit`**, and **`pip-audit-scan-action`** back to **`@main`** so day-to-day CI floats latest (the **tag** remains a frozen snapshot; verify with **`git show v1.x.y:.github/workflows/ci.yml`**). When cutting a release tag, pin those **`uses:`** lines to **`@v…`** as needed for reproducibility.
 
 ## Inputs
 
@@ -130,6 +131,7 @@ All inputs are optional; defaults assume `requirements.txt` at the repository ro
 | `run_bandit` | boolean | `true` | If `false`, the Bandit job is skipped. |
 | `bandit_config` | string | *(empty)* | Optional path to a Bandit config file relative to `working_directory` (for example `bandit.yaml`). |
 | `bandit_exclude` | string | *(empty)* | Comma-separated paths excluded from Bandit (`--exclude`). Default **empty** scans **everything**, including `tests/` (good for catching risky patterns in test code). Set e.g. `tests` only if you want pytest `assert` noise (B101) out of Bandit without per-line `# nosec`. |
+| `bandit_targets` | string | `.` | Space-separated paths relative to `working_directory` passed to Bandit **`-r`** (e.g. `src` or `src tests`). |
 | `bandit_minimum_severity` | string | `all` | Bandit severity floor: `all`, `low`, `medium`, or `high`. Issues below this level are omitted from the report and do not fail the job. `medium` blocks on medium and high only. |
 | `bandit_version` | string | `1.9.4` | Exact **Bandit** version (**`sast-bandit`**). With **`upload_code_scanning`**, Bandit may run **twice** (JSON + SARIF) — see **`sast-bandit`** README. |
 | `upload_code_scanning` | boolean | `true` | If `true`, **Gitleaks**, **Bandit**, **Trivy repo**, and **Trivy image** jobs write SARIF and upload to **Code Scanning** (Security tab / PR). Requires **`security-events: write`** on the **caller** job. Fork PRs from outside contributors may not upload (token limits). |

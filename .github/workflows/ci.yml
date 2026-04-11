@@ -215,7 +215,7 @@ jobs:
           echo "runner.name=${{ runner.name }}"
 
   # Ruff + pytest first; then Gitleaks and Trivy repo scan in parallel; Bandit and pip-audit after Gitleaks.
-  # Optional: Docker build after repo Trivy, then Trivy image scan (leaf — nothing else needs those jobs).
+  # Docker build waits for Gitleaks + repo Trivy (no image if secrets scan failed). Then Trivy image scan (leaf).
   ruff-lint:
     if: ${{ inputs.run_ruff }}
     runs-on: ubuntu-latest
@@ -459,8 +459,9 @@ jobs:
     needs:
       - ruff-lint
       - pytest-test
+      - gitleaks-scan
       - trivy-repo-scan
-    if: ${{ inputs.run_docker_build && !cancelled() && (needs['ruff-lint'].result == 'success' || needs['ruff-lint'].result == 'skipped') && (needs['pytest-test'].result == 'success' || needs['pytest-test'].result == 'skipped') && (needs['trivy-repo-scan'].result == 'success' || needs['trivy-repo-scan'].result == 'skipped') }}
+    if: ${{ inputs.run_docker_build && !cancelled() && (needs['ruff-lint'].result == 'success' || needs['ruff-lint'].result == 'skipped') && (needs['pytest-test'].result == 'success' || needs['pytest-test'].result == 'skipped') && (needs['gitleaks-scan'].result == 'success' || needs['gitleaks-scan'].result == 'skipped') && (needs['trivy-repo-scan'].result == 'success' || needs['trivy-repo-scan'].result == 'skipped') }}
     runs-on: ubuntu-latest
     timeout-minutes: 45
 

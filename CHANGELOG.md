@@ -8,16 +8,16 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ### Changed
 
-- **`bandit-scan`** and **`pip-audit-scan`** no longer **`needs`** **`gitleaks-scan`**; they run **in parallel with Gitleaks and Trivy repo** after **Ruff**/**pytest** (concurrent build/test-stage security).
+- **Gitleaks first:** **`gitleaks-scan`** has **no** upstream **`needs`** — it runs **in parallel with Ruff** and **before pytest**. **`pytest-test`** **`needs`** **`ruff-lint`** and **`gitleaks-scan`**. **Trivy repo**, **Bandit**, and **pip-audit** **`needs`** **Ruff**, **Gitleaks**, and **pytest** (then run **in parallel**). README recommends **pre-commit** for **Ruff** + **Gitleaks** locally.
 - **`docker-build`** **`needs`** **`bandit-scan`** and **`pip-audit-scan`** as well, with **`if:`** rules that treat **`skipped`** as OK **only** when **`run_bandit`** / **`run_pip_audit_scan`** are **false** (so a failed SAST/SCA still blocks the image). **`gitleaks`** / **`trivy`** use the same explicit pattern for their toggles.
 - Reusable **[`dependency-review.yml`](.github/workflows/dependency-review.yml)**: removed **`concurrency`** so PR runs do not deadlock when the **caller** workflow uses the same workflow **name** and **concurrency** **group** (GitHub detects a lock between parent and **`workflow_call`**).
-- **Trivy** job id **`trivy-scan` → `trivy-repo-scan`** with **`needs: [ruff-lint, pytest-test]`** (was fully parallel / no **`needs`**).
+- **Trivy** job id **`trivy-scan` → `trivy-repo-scan`** (was fully parallel / no **`needs`**); **`needs`** evolve with the rest of **`ci.yml`** (see above).
 - Default **`trivy_version`** **`0.69.3`** (upstream had no **`v0.65.0`** release; Trivy install was 404).
 - **[`ci.yml`](.github/workflows/ci.yml)** nested **`thadiust/*`** actions use **`@main`** (**`secrets-gitleaks`**, **`sast-bandit`**, **`pip-audit-scan-action`**) while this branch tracks floating solo-dev refs; switch to semver tags when you want reproducible pins.
 
 ### Added
 
-- **`trivy-repo-scan`** (replaces the old isolated **`trivy-scan`** job): runs after **Ruff** + **pytest**, **in parallel with Gitleaks**, using **`thadiust/trivy-scan@main`** (**`scan_kind: filesystem`**) and SARIF category **`trivy`**.
+- **`trivy-repo-scan`** (replaces the old isolated **`trivy-scan`** job): uses **`thadiust/trivy-scan@main`** (**`scan_kind: filesystem`**) and SARIF category **`trivy`**.
 - Optional **Docker** branch: **`docker-build`** waits on **Gitleaks**, **Trivy repo**, **Bandit**, and **pip-audit**, then saves the image tarball; leaf **`trivy-image-scan`** loads it and runs **`trivy image`** (**SARIF** category **`trivy-image`**). Inputs: **`run_docker_build`**, **`dockerfile`**, **`docker_context`**, **`docker_image_tag`**, **`run_trivy_image_scan`**, **`trivy_image_fail_on_findings`** (default **true**, same strictness as repo Trivy; callers may set **false** with an explicit policy note if base-image noise is unacceptable for merges).
 - **`concurrency`** on **[`actionlint.yml`](.github/workflows/actionlint.yml)** (cancel in-progress per ref).
 

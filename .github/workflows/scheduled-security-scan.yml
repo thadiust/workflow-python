@@ -1,0 +1,24 @@
+# Optional periodic run of the full pipeline against the in-repo dogfood fixture (same graph as dogfood-ci).
+name: Scheduled security scan
+
+on:
+  schedule:
+    - cron: "0 6 * * 1"
+  workflow_dispatch:
+
+concurrency:
+  group: scheduled-security-${{ github.repository }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  security-events: write
+
+jobs:
+  full-pipeline:
+    uses: ./.github/workflows/ci.yml
+    secrets: inherit
+    with:
+      working_directory: dogfood
+      run_docker_build: false
+      run_runner_info: false

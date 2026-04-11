@@ -4,12 +4,14 @@
 
 **Lint in this repo:** [`.github/workflows/actionlint.yml`](.github/workflows/actionlint.yml) calls the reusable workflow **[`.github/workflows/reusable-actionlint.yml`](.github/workflows/reusable-actionlint.yml)** via **`uses: ./.github/workflows/reusable-actionlint.yml`** with **`validate_composite_actions: true`**. Other repositories can call **`thadiust/workflow-python/.github/workflows/reusable-actionlint.yml@main`** (solo dev) or **`@v…`** when you want a frozen snapshot. User-visible changes by tag are listed in **[CHANGELOG.md](CHANGELOG.md)**.
 
+**Integration CI:** [`.github/workflows/dogfood-ci.yml`](.github/workflows/dogfood-ci.yml) runs the full **`ci.yml`** graph against the tiny **[`dogfood/`](dogfood/)** fixture when workflow or action code changes. **[`.github/workflows/scheduled-security-scan.yml`](.github/workflows/scheduled-security-scan.yml)** repeats that on a **weekly** schedule (enable **Actions → Scheduled workflows** in repo settings if GitHub requires it). **[`ORG_PORTABILITY.md`](ORG_PORTABILITY.md)** explains replacing **`thadiust/…`** under another org. **[`SECURITY.md`](SECURITY.md)** is the vulnerability reporting policy.
+
 Reusable GitHub Actions workflow for Python security checks. App repositories call [`.github/workflows/ci.yml`](.github/workflows/ci.yml), which runs:
 
 1. **[Ruff](https://docs.astral.sh/ruff/)** via [`.github/actions/ruff`](.github/actions/ruff/README.md) (**`thadiust/workflow-python/.github/actions/ruff@main`** from callers — not `./…`, which resolves on the **caller** checkout). **`ruff check`**, optional **`ruff format --check`**, pinned **`ruff_version`**, **`--force-exclude`**. Toggle **`run_ruff`**.
 2. **[Gitleaks](https://github.com/gitleaks/gitleaks)** via [`thadiust/secrets-gitleaks`](https://github.com/thadiust/secrets-gitleaks) (**`…/secrets-gitleaks@main`**). **Runs in parallel with Ruff** and does **not** wait on **pytest** — fast secrets detection before slow tests. **`fetch-depth: 0`** for full history. **Locally**, run **Gitleaks** (and **Ruff**) in **[pre-commit](https://pre-commit.com/)** so secrets never enter history; CI mirrors that priority. See [**Removed the file, but CI still fails?**](https://github.com/thadiust/secrets-gitleaks/blob/main/README.md#removed-the-file-but-ci-still-fails). Toggle **`run_gitleaks`**.
 3. **[pytest](https://pytest.org/)** via [`.github/actions/pytest`](.github/actions/pytest/README.md) — **`needs`** **`ruff-lint`** and **`gitleaks-scan`** so **slow tests run only after** lint + secrets gate (each may be **skipped** only when its toggle is off). Toggle **`run_pytest`**.
-4. **[Trivy](https://github.com/aquasecurity/trivy)** (**fs** + **config**) via [`thadiust/trivy-scan`](https://github.com/thadiust/trivy-scan) (**`…/trivy-scan@main`**). **`trivy-repo-scan`** **`needs`** **Ruff**, **Gitleaks**, and **pytest** (same pattern as Bandit/pip-audit). Toggle **`run_trivy`** and **`trivy_*`**.
+4. **[Trivy](https://github.com/aquasecurity/trivy)** (**fs** + **config**) via [`thadiust/trivy-scan`](https://github.com/thadiust/trivy-scan) (**`…/trivy-scan@main`**). **`trivy-repo-scan`** **`needs`** **Ruff**, **Gitleaks**, and **pytest** (same pattern as Bandit/pip-audit) — **deliberate** so **tests fail before** heavier scanners spend minutes; for **earliest** fs/IaC signal only, run a separate workflow or fork the DAG. Toggle **`run_trivy`** and **`trivy_*`**.
 5. **[Bandit](https://github.com/pycqa/bandit)** and **[pip-audit](https://github.com/pypa/pip-audit)** via **`sast-bandit`** / **`pip-audit-scan-action`** — **`needs`** **Ruff**, **Gitleaks**, **pytest**; **in parallel with each other and with Trivy repo** after pytest. Toggle **`run_bandit`**, **`run_pip_audit_scan`**.
 6. Optional **`docker-build`** then **`trivy-image-scan`** (leaf): **`docker-build`** **`needs`** **Ruff**, **Gitleaks**, **pytest**, **Trivy repo**, **Bandit**, **pip-audit** — image only after that wave (**`run_docker_build`**, **`run_trivy_image_scan`**, **`trivy_image_fail_on_findings`**, etc.).
 
@@ -25,6 +27,8 @@ Reusable GitHub Actions workflow for Python security checks. App repositories ca
 - **`requirements.txt`** — **fully pinned** output from **`pip-compile`** (transitives included).
 
 Turn **`enforce_pip_tools_lockfile: true`** so CI runs **`actions/setup-python`** with **`python_version`**, then **`pip-compile … -o requirements.txt`** and **`git diff --exit-code`** on the lock: if someone edits **`.in`** without regenerating the lock, the job fails. Point **`pytest_requirements_file`** at the **same lock** as **`requirements_file`** so tests and SCA see one graph.
+
+**Other package managers:** This reusable workflow is built around **`pip`** + a **`requirements.txt`** graph for **pytest** installs and **pip-audit**. **Poetry**, **uv**, **PDM**, or **`pyproject.toml`‑only** flows are **not** wired in **`ci.yml`**; export a **pinned** **`requirements.txt`** (or add a caller workflow that materializes one before **`workflow_call`**) or maintain a **fork** with native lockfile steps.
 
 ### Terminology
 
@@ -45,19 +49,24 @@ Across these jobs, a **finding** is anything that can fail the pipeline when the
 
 ### Public repositories and fork pull requests
 
-**Fork PR** workflows use a **read-scoped** token and **do not** receive base-repo **secrets** under GitHub’s default model—**do not** redesign workflows to inject **secrets** into jobs that execute untrusted PR code. Malicious or noisy PRs can still **use Actions minutes**; review **concurrency**, **permissions**, and **cache** usage against GitHub’s guidance for public repositories. **SARIF** upload to Code Scanning may be limited for some fork scenarios (see **`upload_code_scanning`** notes below).
+**Fork PR** workflows use a **read-scoped** token and **do not** receive base-repo **secrets** under GitHub’s default model—**do not** redesign workflows to inject **secrets** into jobs that execute untrusted PR code. Malicious or noisy PRs can still **use Actions minutes**; review **concurrency**, **permissions**, and **cache** usage against GitHub’s guidance for public repositories.
+
+**Fork / public expectations (features):** **SARIF** upload (**`upload_code_scanning`**) may **fail or no-op** on fork PRs depending on token scope and **GitHub Advanced Security** — steps use **`continue-on-error: true`** so CI can stay green while uploads are skipped. **[`dependency-review.yml`](.github/workflows/dependency-review.yml)** is typically **PR-only**; forks follow GitHub’s same permission rules as your org’s policy. Set onboarding expectations accordingly.
 
 ### Opinionated `workflow_call` inputs
 
-**`ci.yml`** exposes toggles and common versions but **does not** forward every composite input (e.g. **`gitleaks_version`**, Bandit **`targets`**, pip-audit **`pip_audit_version`**). For those knobs, **fork** this workflow, **vendor** a copy, or add **`workflow_call`** inputs and wire them through—defaults stay maintainable for typical internal repos.
+**`ci.yml`** forwards **tool versions** (**`gitleaks_version`**, **`bandit_version`**, **`pip_audit_version`**) and many toggles. It still **does not** expose every composite knob (e.g. Bandit **`targets`** / **`report_format`**, Gitleaks **`baseline_path`**, pip-audit **`report_file`**). For those, **fork** and extend **`workflow_call`** inputs or wrap a job.
 
 - **Token scope:** The workflow sets **`permissions: contents: read`** so the default `GITHUB_TOKEN` is not granted write access it does not need.
-- **Checkout:** Jobs use **`persist-credentials: false`** so the credential helper is not left configured for later steps. Gitleaks uses **`fetch-depth: 0`** (full history); Trivy repo/image, Bandit, and pip-audit use **`fetch-depth: 1`** (current commit only) to avoid cloning full history on extra runners. The built image is passed to **Trivy image** with **`upload-artifact`** / **`download-artifact`** (**1-day** retention on the tarball).
+- **Checkout:** Jobs use **`persist-credentials: false`** so the credential helper is not left configured for later steps. Gitleaks uses **`fetch-depth: 0`** (full history); Trivy repo/image, Bandit, and pip-audit use **`fetch-depth: 1`** (current commit only) to avoid cloning full history on extra runners. The built image is passed to **Trivy image** with **`upload-artifact`** / **`download-artifact`** (**1-day** retention on the tarball). **Do not bake secrets** into images; confirm **artifact read** permissions match org policy (anyone who can read workflow artifacts can download the tarball for the retention window).
 - **Concurrency:** This workflow defines a **`concurrency`** group (per repository and ref) with **`cancel-in-progress: true`** so superseded runs are dropped when the same branch is pushed again. If your **caller** workflow defines its own `concurrency`, GitHub applies the caller’s rules for the whole run; avoid defining two competing groups for the same jobs.
 - **Fast-then-slow (deliberate):** **Gitleaks** does **not** wait on **pytest**; it runs with **Ruff** in the first wave so secrets are caught before slow installs/tests. **pytest** waits on **Ruff** + **Gitleaks**. **Trivy repo**, **Bandit**, and **pip-audit** wait on **Ruff** + **Gitleaks** + **pytest**, then run **in parallel**. **Docker build** waits on all of those (each **skipped** only when its toggle is off). **Trivy image** is a **leaf**.
-- **Parallel jobs vs minutes:** **`runner-info`** logs **`runner.*`** once. **Ruff** and **Gitleaks** can run together; then **pytest**; then up to **three** scanners in parallel. Optional **Docker** / **Trivy image** add runners. Disable jobs via inputs to save minutes.
+- **Parallel jobs vs minutes:** **`runner-info`** logs **`runner.*`** once (toggle **`run_runner_info: false`** to drop that job). **Ruff** and **Gitleaks** can run together; then **pytest**; then up to **three** scanners in parallel. Optional **Docker** / **Trivy image** add runners. Disable jobs via inputs to save minutes.
 - **Timeouts:** Ruff uses **`timeout-minutes: 15`**; other jobs use **`timeout-minutes: 30`** so a hung scanner does not burn the runner default (6 hours).
 - **Supply chain:** On **`workflow-python` branch `main`**, **`ci.yml`** uses **`@main`** for **Ruff**, **pytest**, **Trivy**, **`secrets-gitleaks`**, **`sast-bandit`**, and **`pip-audit-scan-action`** (solo-dev floating pins). For reproducible upgrades, **consumers** can call **`ci.yml@v…`** and rely on whatever nested pins that tag records. **`upload_code_scanning`** (default **`true`**) uploads **Gitleaks**, **Bandit**, **Trivy repo** (**`trivy`**), and **Trivy image** (**`trivy-image`**) SARIF via **`github/codeql-action/upload-sarif`** — caller workflows need **`permissions: security-events: write`** on the job that **`uses`** this workflow (see example). Upload steps use **`continue-on-error: true`** so missing **GitHub Advanced Security** does not fail the pipeline.
+- **Pip hash pinning:** **Ruff** and **pytest** composites install default pinned versions with **`pip --require-hashes`** when a matching **`constraints/*.txt`** is bundled; other versions log a **warning** and install without hashes. **Lockfile enforcement** installs default **`pip-tools==7.5.3`** via **[`install-pip-tools-hashed`](.github/actions/install-pip-tools-hashed/action.yml)**; other **`pip_tools_version`** values use a plain **`pip install`**. **reusable-actionlint** installs **PyYAML** via **[`install-pyyaml-hashed`](.github/actions/install-pyyaml-hashed/action.yml)**. **Bandit** / **pip-audit** run inside nested actions (still **version-pinned** via inputs; hash pinning can be added there separately). Regenerate constraints with **[`scripts/refresh-pip-constraints.sh`](scripts/refresh-pip-constraints.sh)** when bumping defaults.
+- **`trivy_ignore_unfixed` (policy):** Default **`true`** hides **unfixed** CVEs from fail logic — good for merge noise; set **`false`** if the org wants **unfixable** issues visible in the gate, or add a **second** reporting-only workflow for visibility.
+- **Pre-commit vs CI:** **Ruff** + **Gitleaks** in CI are the **enforced** contract. **[pre-commit](https://pre-commit.com/)** is **recommended locally** (see job list above) but **not** run as a CI job here; add your own optional pre-commit workflow if the org wants hooks identical to developers’ machines.
 
 ### Reusable actionlint (for other repositories)
 
@@ -91,6 +100,7 @@ All inputs are optional; defaults assume `requirements.txt` at the repository ro
 | `pip_tools_version` | string | `7.5.3` | Exact **pip-tools** version for the enforcement step. |
 | `python_version` | string | `3.11` | Python version for Ruff, Bandit, and pip-audit jobs (Trivy is a standalone binary; this input does not affect Trivy). |
 | `fail_on_vuln` | boolean | `true` | If `true`, the pip-audit job fails when vulnerabilities are found. |
+| `pip_audit_version` | string | `2.7.3` | Exact **pip-audit** version (**`pip-audit-scan-action`**). |
 | `run_ruff` | boolean | `true` | If `false`, the Ruff job is skipped. |
 | `ruff_version` | string | `0.15.9` | Exact Ruff version installed in the lint job. |
 | `ruff_paths` | string | `.` | Space-separated paths relative to `working_directory` for `ruff check` / `ruff format`. |
@@ -106,7 +116,7 @@ All inputs are optional; defaults assume `requirements.txt` at the repository ro
 | `trivy_mode` | string | `both` | `fs`, `config`, or `both`. |
 | `trivy_paths` | string | `.` | Space-separated paths relative to `working_directory` for Trivy. |
 | `trivy_severity` | string | `HIGH,CRITICAL` | Comma-separated severities (UNKNOWN, LOW, MEDIUM, HIGH, CRITICAL). |
-| `trivy_ignore_unfixed` | boolean | `true` | If `true`, ignore vulnerabilities without a fix. |
+| `trivy_ignore_unfixed` | boolean | `true` | If `true`, **unfixed** CVEs are omitted from the Trivy gate (merge noise). Set **`false`** if policy requires them visible, or use a separate reporting workflow. |
 | `trivy_fail_on_findings` | boolean | `true` | If `true`, the **repository** Trivy job (**fs**/**config**) fails when findings are reported. |
 | `trivy_image_fail_on_findings` | boolean | `true` | If `true`, the **container image** Trivy job fails on findings (aligned with **`trivy_fail_on_findings`**). Set **`false`** only if you accept a green CI while still uploading SARIF — e.g. noisy base images — and document why in the caller repo. |
 | `run_docker_build` | boolean | `false` | If `true`, build a Docker image only after **Ruff**, **Gitleaks**, **pytest**, **Trivy repo**, **Bandit**, and **pip-audit** have each succeeded or been skipped (toggle off), then upload a tarball for **`trivy-image-scan`**. |
@@ -115,12 +125,15 @@ All inputs are optional; defaults assume `requirements.txt` at the repository ro
 | `docker_image_tag` | string | `workflow-python-ci:scan` | Local tag for **`docker build`**, **`docker save`/`load`**, and **`trivy image`**. |
 | `run_trivy_image_scan` | boolean | `true` | When **`run_docker_build`** is `true`, run **Trivy** on the built image (leaf job). |
 | `run_gitleaks` | boolean | `true` | If `false`, the Gitleaks job is skipped. |
+| `gitleaks_version` | string | `8.18.4` | Exact **Gitleaks** release (**`secrets-gitleaks`**). |
 | `run_pip_audit_scan` | boolean | `true` | If `false`, the pip-audit job is skipped. |
 | `run_bandit` | boolean | `true` | If `false`, the Bandit job is skipped. |
 | `bandit_config` | string | *(empty)* | Optional path to a Bandit config file relative to `working_directory` (for example `bandit.yaml`). |
 | `bandit_exclude` | string | *(empty)* | Comma-separated paths excluded from Bandit (`--exclude`). Default **empty** scans **everything**, including `tests/` (good for catching risky patterns in test code). Set e.g. `tests` only if you want pytest `assert` noise (B101) out of Bandit without per-line `# nosec`. |
 | `bandit_minimum_severity` | string | `all` | Bandit severity floor: `all`, `low`, `medium`, or `high`. Issues below this level are omitted from the report and do not fail the job. `medium` blocks on medium and high only. |
+| `bandit_version` | string | `1.9.4` | Exact **Bandit** version (**`sast-bandit`**). With **`upload_code_scanning`**, Bandit may run **twice** (JSON + SARIF) — see **`sast-bandit`** README. |
 | `upload_code_scanning` | boolean | `true` | If `true`, **Gitleaks**, **Bandit**, **Trivy repo**, and **Trivy image** jobs write SARIF and upload to **Code Scanning** (Security tab / PR). Requires **`security-events: write`** on the **caller** job. Fork PRs from outside contributors may not upload (token limits). |
+| `run_runner_info` | boolean | `true` | If `false`, skip the **`runner-info`** job (saves one job; no impact on scan results). |
 
 ### When Bandit fails
 

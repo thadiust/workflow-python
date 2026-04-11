@@ -1,0 +1,11 @@
+name: "Install pip-tools (hash-pinned)"
+description: "Installs pip-tools 7.5.3 and dependencies via pip --require-hashes (default lockfile enforcement version in ci.yml)."
+
+runs:
+  using: "composite"
+  steps:
+    - name: Install pip-tools
+      shell: bash
+      run: |
+        set -euo pipefail
+        python -m pip install --disable-pip-version-check -q --require-hashes -r "${GITHUB_ACTION_PATH}/constraints.txt"

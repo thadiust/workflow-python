@@ -1,0 +1,2 @@
+# Minimal pinned graph for integration CI (pip-audit + pytest install). Bump if pip-audit reports issues.
+attrs==24.2.0

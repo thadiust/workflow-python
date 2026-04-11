@@ -9,7 +9,7 @@ Local composite used by the [`ruff-lint`](../../workflows/ci.yml) job. Callers u
 1. **`ruff check`** — once, with **`--output-format github`** (PR/Actions annotations) and **`--force-exclude`** (honors excludes when paths are explicit, similar to pre-commit hooks).
 2. Optionally **`ruff format --check`** — same paths and config, also with **`--force-exclude`**.
 
-Ruff is installed with **`pip install --no-deps ruff==…`** (pinned `ruff_version`).
+Ruff is installed with **`pip --require-hashes`** when **`constraints/ruff-<version>.txt`** exists for the pinned **`ruff_version`** (default **0.15.9**); otherwise **`pip install --no-deps ruff==…`** with a workflow warning. Regenerate constraints via **`scripts/refresh-pip-constraints.sh`** in the **`workflow-python`** repo after version bumps.
 
 On **failure**, the step writes a short **Job Summary** (GitHub **Summary** tab) with copy-paste **Ruff** commands matching CI, prints **`ruff format --diff`** in the log when format is the problem, and prints a **brief** stderr pointer to the Summary. **Venv**, **PEP 668**, and shell quirks belong in the **consumer repo README**, not in CI noise.
 

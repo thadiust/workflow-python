@@ -1,0 +1,35 @@
+# Integration test: run the full reusable ci.yml against a tiny in-repo fixture whenever the pipeline changes.
+name: Dogfood (integration)
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/ci.yml"
+      - ".github/workflows/dogfood-ci.yml"
+      - ".github/actions/**"
+      - "dogfood/**"
+  pull_request:
+    paths:
+      - ".github/workflows/ci.yml"
+      - ".github/workflows/dogfood-ci.yml"
+      - ".github/actions/**"
+      - "dogfood/**"
+  workflow_dispatch:
+
+concurrency:
+  group: dogfood-ci-${{ github.repository }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  security-events: write
+
+jobs:
+  full-pipeline:
+    uses: ./.github/workflows/ci.yml
+    secrets: inherit
+    with:
+      working_directory: dogfood
+      run_docker_build: false
+      run_runner_info: false

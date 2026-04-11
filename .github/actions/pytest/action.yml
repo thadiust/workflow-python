@@ -82,7 +82,14 @@ runs:
 
         python -m pip install --disable-pip-version-check -q "${extra[@]}" -r "${{ inputs.requirements_file }}"
 
-        python -m pip install --disable-pip-version-check -q "pytest==${{ inputs.pytest_version }}"
+        PV="${{ inputs.pytest_version }}"
+        CF="${GITHUB_ACTION_PATH}/constraints/pytest-${PV}.txt"
+        if [ -f "$CF" ]; then
+          python -m pip install --disable-pip-version-check -q --require-hashes -r "$CF"
+        else
+          echo "::warning title=Supply chain::No hash constraints for pytest==${PV} (expected ${CF}). Using pip without --require-hashes. Add constraints/pytest-${PV}.txt or run scripts/refresh-pip-constraints.sh." >&2
+          python -m pip install --disable-pip-version-check -q "pytest==${PV}"
+        fi
 
     - name: Run pytest
       id: pytest

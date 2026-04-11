@@ -107,7 +107,14 @@ runs:
       working-directory: ${{ inputs.working_directory }}
       run: |
         set -euo pipefail
-        python -m pip install --disable-pip-version-check -q --no-deps "ruff==${{ inputs.ruff_version }}"
+        RV="${{ inputs.ruff_version }}"
+        CF="${GITHUB_ACTION_PATH}/constraints/ruff-${RV}.txt"
+        if [ -f "$CF" ]; then
+          python -m pip install --disable-pip-version-check -q --no-deps --require-hashes -r "$CF"
+        else
+          echo "::warning title=Supply chain::No hash constraints for ruff==${RV} (expected ${CF}). Using pip without --require-hashes. Add constraints/ruff-${RV}.txt or run scripts/refresh-pip-constraints.sh." >&2
+          python -m pip install --disable-pip-version-check -q --no-deps "ruff==${RV}"
+        fi
 
     - name: Run Ruff
       id: ruff

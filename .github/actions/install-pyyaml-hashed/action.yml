@@ -1,0 +1,11 @@
+name: "Install PyYAML (hash-pinned)"
+description: "Installs PyYAML 6.0.3 via pip --require-hashes (constraints bundled in this action)."
+
+runs:
+  using: "composite"
+  steps:
+    - name: Install PyYAML
+      shell: bash
+      run: |
+        set -euo pipefail
+        python -m pip install --disable-pip-version-check -q --require-hashes -r "${GITHUB_ACTION_PATH}/constraints.txt"

@@ -47,6 +47,11 @@ on:
         required: false
         type: boolean
         default: true
+      pip_audit_version:
+        description: "Exact pip-audit version (passed to pip-audit-scan-action)"
+        required: false
+        type: string
+        default: "2.7.3"
       run_ruff:
         description: "Whether to run the Ruff lint/format job (runs first when enabled)"
         required: false
@@ -102,6 +107,11 @@ on:
         required: false
         type: boolean
         default: true
+      gitleaks_version:
+        description: "Exact Gitleaks release version (no v prefix); passed to secrets-gitleaks"
+        required: false
+        type: string
+        default: "8.18.4"
       run_pip_audit_scan:
         description: "Whether to run the pip-audit dependency scan job"
         required: false
@@ -127,9 +137,14 @@ on:
         required: false
         type: string
         default: "all"
+      bandit_version:
+        description: "Exact Bandit version for the SAST job (passed to sast-bandit)"
+        required: false
+        type: string
+        default: "1.9.4"
 
       run_trivy:
-        description: "Whether to run Trivy filesystem + config scans (Wave 1; repository/IaC security)"
+        description: "Whether to run Trivy filesystem + config scans (after pytest, in parallel with Bandit and pip-audit when enabled)"
         required: false
         type: boolean
         default: true
@@ -201,9 +216,16 @@ on:
         type: boolean
         default: true
 
+      run_runner_info:
+        description: "If true, run a tiny runner-info job (OS/arch/name). Set false to save a job slot; no effect on security gates."
+        required: false
+        type: boolean
+        default: true
+
 jobs:
   # Logs documented runner context (no runner.version in schema — use os/arch/environment/name).
   runner-info:
+    if: ${{ inputs.run_runner_info != false }}
     runs-on: ubuntu-latest
     timeout-minutes: 1
     steps:
@@ -259,6 +281,7 @@ jobs:
         id: gitleaks
         uses: thadiust/secrets-gitleaks@main
         with:
+          gitleaks_version: ${{ inputs.gitleaks_version }}
           working_directory: ${{ inputs.working_directory }}
           fail_on_findings: true
           write_sarif: ${{ inputs.upload_code_scanning }}
@@ -362,6 +385,7 @@ jobs:
         uses: thadiust/sast-bandit@main
         with:
           python_version: ${{ inputs.python_version }}
+          bandit_version: ${{ inputs.bandit_version }}
           working_directory: ${{ inputs.working_directory }}
           targets: "."
           exclude: ${{ inputs.bandit_exclude }}
@@ -401,6 +425,14 @@ jobs:
         with:
           python-version: ${{ inputs.python_version }}
 
+      - name: Install pip-tools (hash-pinned for default version)
+        if: ${{ inputs.enforce_pip_tools_lockfile && inputs.pip_tools_version == '7.5.3' }}
+        uses: thadiust/workflow-python/.github/actions/install-pip-tools-hashed@main
+
+      - name: Install pip-tools (custom version, no bundled hashes)
+        if: ${{ inputs.enforce_pip_tools_lockfile && inputs.pip_tools_version != '7.5.3' }}
+        run: python -m pip install --disable-pip-version-check -q "pip-tools==${{ inputs.pip_tools_version }}"
+
       - name: Enforce pip-tools lockfile (pip-compile matches requirements_file)
         if: ${{ inputs.enforce_pip_tools_lockfile }}
         shell: bash
@@ -408,7 +440,6 @@ jobs:
           WD: ${{ inputs.working_directory }}
           LOCK_FILE: ${{ inputs.requirements_file }}
           IN_FILE: ${{ inputs.pip_tools_requirements_in }}
-          PIP_TOOLS_VERSION: ${{ inputs.pip_tools_version }}
         run: |
           set -euo pipefail
           if [ -z "$IN_FILE" ] || [ -z "$LOCK_FILE" ]; then
@@ -436,7 +467,6 @@ jobs:
             echo "Missing lock file: $WD/$LOCK_FILE" >&2
             exit 1
           fi
-          python -m pip install --disable-pip-version-check -q "pip-tools==${PIP_TOOLS_VERSION}"
           pip-compile "$IN_FILE" -o "$LOCK_FILE" --strip-extras
           cd "$GITHUB_WORKSPACE"
           if [ "$WD" = "." ]; then
@@ -452,6 +482,7 @@ jobs:
         uses: thadiust/pip-audit-scan-action@main
         with:
           python_version: ${{ inputs.python_version }}
+          pip_audit_version: ${{ inputs.pip_audit_version }}
           working_directory: ${{ inputs.working_directory }}
           requirements_file: ${{ inputs.requirements_file }}
           fail_on_vuln: ${{ inputs.fail_on_vuln }}

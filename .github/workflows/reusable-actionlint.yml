@@ -71,11 +71,14 @@ jobs:
         with:
           python-version: "3.12"
 
+      - name: Install PyYAML (hash-pinned)
+        if: ${{ inputs.validate_composite_actions || inputs.validate_root_action_yml }}
+        uses: thadiust/workflow-python/.github/actions/install-pyyaml-hashed@main
+
       - name: Validate composite action.yml files parse
         if: ${{ inputs.validate_composite_actions }}
         run: |
           set -euo pipefail
-          python -m pip install --disable-pip-version-check -q "pyyaml==6.0.3"
           python - <<'PY'
           import pathlib
           import sys
@@ -100,5 +103,4 @@ jobs:
         if: ${{ inputs.validate_root_action_yml }}
         run: |
           set -euo pipefail
-          python -m pip install --disable-pip-version-check -q "pyyaml==6.0.3"
           python -c "import yaml; yaml.safe_load(open('action.yml', encoding='utf-8'))"

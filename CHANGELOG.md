@@ -8,6 +8,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ### Fixed
 
+- **Dogfood / Bandit:** **`sast-bandit`** now installs **`bandit[sarif]`** so **Code Scanning** SARIF works on PyPI **Bandit**; dogfood test uses **`# nosec B101`** for pytest **`assert`**.
 - **`run_pytest`** / **`run_gitleaks`** input descriptions and **`run_docker_build`** README row aligned with **`ci.yml`**: pytest after **Ruff** + **Gitleaks**; Gitleaks **parallel** with Ruff; Docker build waits on all six upstream jobs.
 
 ### Changed

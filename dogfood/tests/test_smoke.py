@@ -1,2 +1,2 @@
 def test_smoke() -> None:
-    assert True
+    assert True  # nosec B101  # pytest idiom; Bandit warns on assert under -O

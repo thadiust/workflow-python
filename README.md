@@ -39,6 +39,18 @@ Across these jobs, a **finding** is anything that can fail the pipeline when the
 
 ## Security and cost
 
+### Supported runners and tooling
+
+**`ci.yml`** is validated on **GitHub-hosted `ubuntu-latest`** (**linux/amd64**). Nested composites (**[`secrets-gitleaks`](https://github.com/thadiust/secrets-gitleaks)**, **[`trivy-scan`](https://github.com/thadiust/trivy-scan)**, etc.) download **Linux x86_64** binaries and use **`jq`** on **`PATH`** for counts. **[`reusable-actionlint.yml`](.github/workflows/reusable-actionlint.yml)** fetches **actionlint** **`linux_amd64`** only. **ARM** or **minimal** runners without **`jq`** require changes to those actions or your runner image before this pipeline is reliable.
+
+### Public repositories and fork pull requests
+
+**Fork PR** workflows use a **read-scoped** token and **do not** receive base-repo **secrets** under GitHub’s default model—**do not** redesign workflows to inject **secrets** into jobs that execute untrusted PR code. Malicious or noisy PRs can still **use Actions minutes**; review **concurrency**, **permissions**, and **cache** usage against GitHub’s guidance for public repositories. **SARIF** upload to Code Scanning may be limited for some fork scenarios (see **`upload_code_scanning`** notes below).
+
+### Opinionated `workflow_call` inputs
+
+**`ci.yml`** exposes toggles and common versions but **does not** forward every composite input (e.g. **`gitleaks_version`**, Bandit **`targets`**, pip-audit **`pip_audit_version`**). For those knobs, **fork** this workflow, **vendor** a copy, or add **`workflow_call`** inputs and wire them through—defaults stay maintainable for typical internal repos.
+
 - **Token scope:** The workflow sets **`permissions: contents: read`** so the default `GITHUB_TOKEN` is not granted write access it does not need.
 - **Checkout:** Jobs use **`persist-credentials: false`** so the credential helper is not left configured for later steps. Gitleaks uses **`fetch-depth: 0`** (full history); Trivy repo/image, Bandit, and pip-audit use **`fetch-depth: 1`** (current commit only) to avoid cloning full history on extra runners. The built image is passed to **Trivy image** with **`upload-artifact`** / **`download-artifact`** (**1-day** retention on the tarball).
 - **Concurrency:** This workflow defines a **`concurrency`** group (per repository and ref) with **`cancel-in-progress: true`** so superseded runs are dropped when the same branch is pushed again. If your **caller** workflow defines its own `concurrency`, GitHub applies the caller’s rules for the whole run; avoid defining two competing groups for the same jobs.

@@ -12,6 +12,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ### Changed
 
+- **README:** **Supported runners** (**linux/amd64**, **`jq`**, **actionlint** asset), **public repos / fork PRs** (secrets, minutes, cache), and **opinionated inputs** (extend via fork or extra **`workflow_call`** inputs) documented for operators.
 - **Gitleaks first:** **`gitleaks-scan`** has **no** upstream **`needs`** — it runs **in parallel with Ruff** and **before pytest**. **`pytest-test`** **`needs`** **`ruff-lint`** and **`gitleaks-scan`**. **Trivy repo**, **Bandit**, and **pip-audit** **`needs`** **Ruff**, **Gitleaks**, and **pytest** (then run **in parallel**). README recommends **pre-commit** for **Ruff** + **Gitleaks** locally.
 - **`docker-build`** **`needs`** **`bandit-scan`** and **`pip-audit-scan`** as well, with **`if:`** rules that treat **`skipped`** as OK **only** when **`run_bandit`** / **`run_pip_audit_scan`** are **false** (so a failed SAST/SCA still blocks the image). **`gitleaks`** / **`trivy`** use the same explicit pattern for their toggles.
 - Reusable **[`dependency-review.yml`](.github/workflows/dependency-review.yml)**: removed **`concurrency`** so PR runs do not deadlock when the **caller** workflow uses the same workflow **name** and **concurrency** **group** (GitHub detects a lock between parent and **`workflow_call`**).

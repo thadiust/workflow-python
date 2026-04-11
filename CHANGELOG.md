@@ -8,6 +8,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ### Changed
 
+- **`ci.yml`** pins **`thadiust/trivy-scan`** to a **full commit SHA** instead of **`@main`** so the GitHub Actions language server and CI agree on composite **inputs**; update the SHA when upgrading **trivy-scan**.
 - **Trivy** job id **`trivy-scan` → `trivy-repo-scan`** with **`needs: [ruff-lint, pytest-test]`** (was fully parallel / no **`needs`**).
 - Default **`trivy_version`** **`0.69.3`** (upstream had no **`v0.65.0`** release; Trivy install was 404).
 - **[`ci.yml`](.github/workflows/ci.yml)** nested **`thadiust/*`** actions use **`@main`** (**`secrets-gitleaks`**, **`sast-bandit`**, **`pip-audit-scan-action`**) while this branch tracks floating solo-dev refs; switch to semver tags when you want reproducible pins.

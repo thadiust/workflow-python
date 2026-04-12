@@ -19,7 +19,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ### Changed
 
-- **`ci.yml`:** **`gitleaks-scan`** **`needs`** **`pre-commit-check`** and runs **after** it when pre-commit succeeds; **`if`** uses **`always()`** with **`needs['pre-commit-check'].result`** **`success`** or **`skipped`** so **`run_pre_commit: false`** still allows **Gitleaks**. README / **sample-python-app** DAG updated (**no** **pre-commit ∥ Gitleaks**).
+- **`ci.yml`:** **`gitleaks-scan`** again has **no** **`needs`** on **`pre-commit-check`** — it runs **in parallel** with **`pre-commit-check`** (**precheck** wave before **pytest**). README / **sample-python-app** DAG text restored to **pre-commit ∥ Gitleaks**.
 - **actionlint** runs via **`rhysd/actionlint`** pre-commit hook inside **`pre-commit-check`** (not a separate workflow). **`workflow-python`:** removed **[`.github/workflows/actionlint.yml`](.github/workflows/actionlint.yml)**; composite **`action.yml`** syntax check is **`scripts/validate_composite_actions_yaml.py`** + local pre-commit hook. **`sample-python-app`:** removed standalone **`actionlint.yml`** (hook in **`.pre-commit-config.yaml`** only).
 - **`ci.yml`:** removed **`ruff-lint`** job and **`run_ruff`** / **`ruff_*`** inputs — **Ruff** runs **only** inside **`pre-commit-check`** (`.pre-commit-config.yaml`). Downstream jobs no longer **`needs`** **`ruff-lint`**.
 - **`python-pr-suite.yml`:** forwards **`run_pre_commit`** (default **`true`**); no **`run_ruff`** / **`ruff_version`**. Expanded forwarding for **PR/push parity** in typical apps (see workflow file). **`COMPANY_RUNBOOK.md`:** **Residual gaps (not oversights)** table. **`README`:** link to residual section.

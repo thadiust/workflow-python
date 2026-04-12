@@ -57,13 +57,23 @@ on:
         required: false
         type: boolean
         default: true
+      run_gitleaks:
+        description: "Run secrets-gitleaks in parallel with pre-commit-check (full git history; SARIF when upload_code_scanning is true). Pre-commit still runs the Gitleaks hook when run_pre_commit is true — set false here to skip only the CI job and avoid duplicate minutes if the hook is enough"
+        required: false
+        type: boolean
+        default: true
+      gitleaks_version:
+        description: "Exact Gitleaks release version (no v prefix); passed to secrets-gitleaks. Align .pre-commit-config.yaml gitleaks rev when you care about version parity"
+        required: false
+        type: string
+        default: "8.18.4"
       pip_audit_version:
         description: "Exact pip-audit version (passed to pip-audit-scan-action)"
         required: false
         type: string
         default: "2.7.3"
       run_pytest:
-        description: "Whether to run pytest (after pre-commit-check when enabled; secrets are gated by the Gitleaks pre-commit hook there)"
+        description: "Whether to run pytest (after pre-commit-check and gitleaks-scan when those jobs are enabled or skipped by toggle)"
         required: false
         type: boolean
         default: true
@@ -191,7 +201,7 @@ on:
         default: true
 
       upload_code_scanning:
-        description: "Upload Bandit, Trivy repo SARIF, and optional Trivy image SARIF to GitHub Code Scanning (Security tab / PR). Gitleaks runs only via pre-commit (no separate SARIF job). Caller job needs security-events: write. No-op if Advanced Security is off (upload step uses continue-on-error)."
+        description: "Upload Gitleaks (when run_gitleaks), Bandit, Trivy repo SARIF, and optional Trivy image SARIF to GitHub Code Scanning (Security tab / PR). Caller job needs security-events: write. No-op if Advanced Security is off (upload step uses continue-on-error)."
         required: false
         type: boolean
         default: true
@@ -216,7 +226,7 @@ jobs:
           echo "runner.environment=${{ runner.environment }}"
           echo "runner.name=${{ runner.name }}"
 
-  # Fast gate: pre-commit (includes Gitleaks hook — no separate gitleaks-scan job). Then pytest. Then Trivy, Bandit, pip-audit in parallel.
+  # Fast gate: pre-commit-check ∥ gitleaks-scan (optional full-history detect + SARIF; hook still in pre-commit when run_pre_commit is on). Then pytest. Then Trivy, Bandit, pip-audit in parallel.
   # Docker build runs only after that wave (each job may be skipped only when its toggle is off). Then Trivy image scan (leaf).
   pre-commit-check:
     if: ${{ inputs.run_pre_commit != false }}
@@ -237,10 +247,44 @@ jobs:
       - name: Run pre-commit
         uses: pre-commit/action@v3.0.0
 
+  gitleaks-scan:
+    if: ${{ inputs.run_gitleaks && !cancelled() }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      security-events: write
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Run Gitleaks
+        id: gitleaks
+        uses: thadiust/secrets-gitleaks@main
+        with:
+          gitleaks_version: ${{ inputs.gitleaks_version }}
+          working_directory: ${{ inputs.working_directory }}
+          fail_on_findings: true
+          write_sarif: ${{ inputs.upload_code_scanning }}
+          sarif_filename: gitleaks-results.sarif
+
+      - name: Upload Gitleaks SARIF to GitHub Code Scanning
+        if: ${{ inputs.upload_code_scanning != false && (success() || failure()) && steps.gitleaks.outputs.sarif_path != '' }}
+        continue-on-error: true
+        uses: github/codeql-action/upload-sarif@v4
+        with:
+          sarif_file: ${{ steps.gitleaks.outputs.sarif_path }}
+          category: gitleaks
+
   pytest-test:
     needs:
       - pre-commit-check
-    if: ${{ inputs.run_pytest && !cancelled() && (needs['pre-commit-check'].result == 'success' || needs['pre-commit-check'].result == 'skipped') }}
+      - gitleaks-scan
+    if: ${{ always() && inputs.run_pytest && !cancelled() && (needs['pre-commit-check'].result == 'success' || needs['pre-commit-check'].result == 'skipped') && (needs['gitleaks-scan'].result == 'success' || (needs['gitleaks-scan'].result == 'skipped' && inputs.run_gitleaks == false)) }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
 

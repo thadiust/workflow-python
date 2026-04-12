@@ -4,7 +4,7 @@
 
 **Frequency:** for constraint refresh, only when default version numbers or bundled pins change — not every commit.
 
-**Pre-commit:** **[`.pre-commit-config.yaml`](.pre-commit-config.yaml)** — bump **`psf/black`**, **`astral-sh/ruff-pre-commit`**, and **Gitleaks** **`rev:`** when you upgrade formatters/lint or when **`ci.yml`** **`gitleaks_version`** changes; run **`pre-commit autoupdate`** for **`pre-commit/pre-commit-hooks`** (and review the diff). **`ci.yml`** **`pre-commit-check`** and **[`.github/workflows/pre-commit.yml`](.github/workflows/pre-commit.yml)** both run **`pre-commit run --all-files`** (**no** separate Ruff job in **`ci.yml`**).
+**Pre-commit:** **[`.pre-commit-config.yaml`](.pre-commit-config.yaml)** — bump **`psf/black`**, **`astral-sh/ruff-pre-commit`**, and **Gitleaks** **`rev:`** when you upgrade formatters/lint; run **`pre-commit autoupdate`** for **`pre-commit/pre-commit-hooks`** (and review the diff). **Gitleaks** runs **only** here — **`ci.yml`** has no separate **`secrets-gitleaks`** job. **`ci.yml`** **`pre-commit-check`** and **[`.github/workflows/pre-commit.yml`](.github/workflows/pre-commit.yml)** both run **`pre-commit run --all-files`** (**no** separate Ruff job in **`ci.yml`**).
 
 ---
 

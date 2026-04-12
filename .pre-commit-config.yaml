@@ -3,9 +3,16 @@
 # CI: reusable ci.yml (pre-commit-check job) on every caller; this repo also runs .github/workflows/pre-commit.yml on push/PR.
 #
 # actionlint: GitHub Actions workflow semantics (not YAML-1.1 check-yaml). Composite action.yml parse: scripts/validate_composite_actions_yaml.py.
-# Formatting: Ruff replaces Black + isort here — do not add psf/black (would fight ruff-format).
+# Formatting: Black formats; Ruff is lint-only (ruff check --fix). Do not add ruff-format — it would fight Black.
+
+fail_fast: true
 
 repos:
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.18.4
+    hooks:
+      - id: gitleaks
+
   - repo: https://github.com/rhysd/actionlint
     rev: v1.7.12
     hooks:
@@ -27,16 +34,17 @@ repos:
       - id: debug-statements
         language_version: python3
 
+  - repo: https://github.com/psf/black
+    rev: 26.3.1
+    hooks:
+      - id: black
+        language_version: python3
+
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: v0.15.9
     hooks:
       - id: ruff
-      - id: ruff-format
-
-  - repo: https://github.com/gitleaks/gitleaks
-    rev: v8.18.4
-    hooks:
-      - id: gitleaks
+        args: [--fix]
 
   - repo: local
     hooks:

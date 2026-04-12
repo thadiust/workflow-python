@@ -4,7 +4,7 @@
 
 **Frequency:** for constraint refresh, only when default version numbers or bundled pins change — not every commit.
 
-**Pre-commit:** **[`.pre-commit-config.yaml`](.pre-commit-config.yaml)** — bump **`astral-sh/ruff-pre-commit`** / **Gitleaks** **`rev:`** when you upgrade Ruff or when **`ci.yml`** **`gitleaks_version`** changes; run **`pre-commit autoupdate`** for **`pre-commit/pre-commit-hooks`** (and review the diff). **`ci.yml`** **`pre-commit-check`** and **[`.github/workflows/pre-commit.yml`](.github/workflows/pre-commit.yml)** both run **`pre-commit run --all-files`** (**no** separate Ruff job in **`ci.yml`**).
+**Pre-commit:** **[`.pre-commit-config.yaml`](.pre-commit-config.yaml)** — bump **`psf/black`**, **`astral-sh/ruff-pre-commit`**, and **Gitleaks** **`rev:`** when you upgrade formatters/lint or when **`ci.yml`** **`gitleaks_version`** changes; run **`pre-commit autoupdate`** for **`pre-commit/pre-commit-hooks`** (and review the diff). **`ci.yml`** **`pre-commit-check`** and **[`.github/workflows/pre-commit.yml`](.github/workflows/pre-commit.yml)** both run **`pre-commit run --all-files`** (**no** separate Ruff job in **`ci.yml`**).
 
 ---
 
@@ -14,7 +14,7 @@ When you bump a default for **ruff**, **pytest**, **bandit**, **pip-audit**, **p
 
 | Default you change | Where it lives | Script (run from that repo) | Constraint output |
 |-------------------|----------------|----------------------------|-------------------|
-| **Ruff** | [`.pre-commit-config.yaml`](.pre-commit-config.yaml) (`ruff-pre-commit`) + optional [`.github/actions/ruff`](.github/actions/ruff/README.md) | **`pre-commit autoupdate`** / hook **`rev:`**; for composite, **`scripts/refresh-pip-constraints.sh`** | [`.github/actions/ruff/constraints/ruff-*`](.github/actions/ruff/constraints/) |
+| **Black / Ruff** | [`.pre-commit-config.yaml`](.pre-commit-config.yaml) (**`psf/black`** + **`ruff-pre-commit`** lint) + optional [`.github/actions/ruff`](.github/actions/ruff/README.md) | **`pre-commit autoupdate`** / hook **`rev:`**; for composite, **`scripts/refresh-pip-constraints.sh`** | [`.github/actions/ruff/constraints/ruff-*`](.github/actions/ruff/constraints/) |
 | **`pytest_version`** | `ci.yml` + [`.github/actions/pytest/action.yml`](.github/actions/pytest/action.yml) | same | [`.github/actions/pytest/constraints/pytest-*`](.github/actions/pytest/constraints/) |
 | **`pip_tools_version`** (default **7.5.3**) | `ci.yml` | same | [`.github/actions/install-pip-tools-hashed/constraints.txt`](.github/actions/install-pip-tools-hashed/constraints.txt) |
 | **PyYAML** in **install-pyyaml-hashed** | [`.github/actions/install-pyyaml-hashed/`](.github/actions/install-pyyaml-hashed/) | same | [`.github/actions/install-pyyaml-hashed/constraints.txt`](.github/actions/install-pyyaml-hashed/constraints.txt) |

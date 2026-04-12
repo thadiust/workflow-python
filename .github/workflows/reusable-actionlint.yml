@@ -1,6 +1,6 @@
 # Call from other repositories with:
 #   uses: thadiust/workflow-python/.github/workflows/reusable-actionlint.yml@main
-# This repo's own actionlint.yml uses ./reusable-actionlint.yml (same ref as the push).
+# workflow-python itself runs actionlint + composite YAML parse via .pre-commit-config.yaml (pre-commit-check / pre-commit.yml).
 name: "Reusable actionlint"
 
 on:

@@ -2,16 +2,22 @@
 # Full tree (Cisco-style): pre-commit run --all-files
 # CI: reusable ci.yml (pre-commit-check job) on every caller; this repo also runs .github/workflows/pre-commit.yml on push/PR.
 #
+# actionlint: GitHub Actions workflow semantics (not YAML-1.1 check-yaml). Composite action.yml parse: scripts/validate_composite_actions_yaml.py.
 # Formatting: Ruff replaces Black + isort here — do not add psf/black (would fight ruff-format).
 
 repos:
+  - repo: https://github.com/rhysd/actionlint
+    rev: v1.7.12
+    hooks:
+      - id: actionlint
+        name: actionlint
+
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v6.0.0
     hooks:
       - id: trailing-whitespace
       - id: end-of-file-fixer
       - id: check-yaml
-        # GitHub workflow keys like `on:` are invalid in YAML 1.1 — validate other YAML only
         exclude: ^\.github/workflows/
       - id: check-json
       - id: check-merge-conflict
@@ -31,3 +37,13 @@ repos:
     rev: v8.18.4
     hooks:
       - id: gitleaks
+
+  - repo: local
+    hooks:
+      - id: composite-action-yaml-parse
+        name: PyYAML parse .github/actions composites
+        language: python
+        additional_dependencies: [pyyaml==6.0.2]
+        entry: python scripts/validate_composite_actions_yaml.py
+        pass_filenames: false
+        files: ^(\.github/actions/.*|scripts/validate_composite_actions_yaml\.py)$

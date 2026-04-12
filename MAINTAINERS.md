@@ -8,7 +8,7 @@
 
 ## Severity 10 — Hash constraints when defaults move
 
-When you change **default versions** in [`ci.yml`](.github/workflows/ci.yml) or composite [`action.yml`](.github/actions/) defaults, or the **PyYAML** version that [`scripts/refresh-pip-constraints.sh`](scripts/refresh-pip-constraints.sh) pins for **install-pyyaml-hashed**, run the matching **`scripts/refresh-pip-constraints.sh`** and commit the updated **`constraints/*.txt`** (or **`install-*-hashed/constraints.txt`**). If you skip this, CI still runs but you lose **`--require-hashes`** for that tool: **`::warning`** plus a plain **`pip install`**.
+When you bump a default for **ruff**, **pytest**, **bandit**, **pip-audit**, **pip-tools**, or **PyYAML** (in [`ci.yml`](.github/workflows/ci.yml), composite [`action.yml`](.github/actions/) files, or the pin logic in [`scripts/refresh-pip-constraints.sh`](scripts/refresh-pip-constraints.sh)), run the matching **`scripts/refresh-pip-constraints.sh`** and commit the new constraint files — or you **silently** drop **`--require-hashes`** for that tool (**`::warning`** + plain **`pip install`**). CI still runs; installs are just unhashed for the mismatch.
 
 | Default you change | Where it lives | Script (run from that repo) | Constraint output |
 |-------------------|----------------|----------------------------|-------------------|
@@ -19,40 +19,50 @@ When you change **default versions** in [`ci.yml`](.github/workflows/ci.yml) or 
 | **`bandit_version`** (nested action) | **`thadiust/sast-bandit`** — `action.yml` | **`scripts/refresh-pip-constraints.sh`** (optional version arg) | `constraints/bandit-sarif-*.txt` |
 | **`pip_audit_version`** (nested action) | **`thadiust/pip-audit-scan-action`** — `action.yml` (this workspace: **`scan-pip-audit/`**) | **`scripts/refresh-pip-constraints.sh`** | `constraints/pip-audit-*.txt` |
 
+**Layout:** Hashed pip constraint **trees** named **`constraints/`** exist for **ruff**, **pytest**, **bandit**, and **pip-audit**. **pip-tools** and **PyYAML** use **`install-*-hashed/constraints.txt`** at the composite root — **not** a **`constraints/`** subfolder (hence four **`constraints/`** trees in the repo, not six).
+
 **Requires:** Python **3.11** and **pip-tools** (the scripts create a venv and install pip-tools).
 
-**`thadiust/... @main`:** no change required when you only bump defaults here — consumers already track **`main`** unless you adopt tags later.
+Bumping defaults **here** does not require editing **`uses: thadiust/... @main`** lines; see **severity 7** for what **`@main`** still implies.
 
 ---
 
-## Severity 7 — Dogfood blast radius (multi-repo)
+## Severity 7 — Multi-repo coupling (`@main` on nested actions)
+
+**`ci.yml`** references first-party actions at **`@main`**. A bad push to **sast-bandit**, **pip-audit-scan-action**, or similar can break **`ci.yml`** callers **immediately**. For solo work that is often **acceptable**; treat this as **awareness**, not a required change (tags / staging come later if you want them).
+
+---
+
+## Severity 6 — Dogfood only on workflow-python paths
 
 [`dogfood-ci.yml`](.github/workflows/dogfood-ci.yml) runs on **push**/**PR** only when these paths change: `.github/workflows/ci.yml`, `.github/workflows/dogfood-ci.yml`, `.github/actions/**`, and `dogfood/**`.
 
-Edits that live **only** in sibling repos (**`sast-bandit`**, **`pip-audit-scan-action`** / **`scan-pip-audit`**, **`trivy-scan`**, **`secrets-gitleaks`**) do **not** trigger **workflow-python** dogfood unless you also touch **workflow-python** or you rely on **those repos’ own CI**. When your local workspace and published repos diverge, **know what integration actually ran**.
-
----
-
-## Severity 6 — First-party `@main` risk
-
-**`ci.yml`** references first-party actions at **`@main`**. A bad push to e.g. **sast-bandit** `main` can break **`ci.yml`** consumers immediately. For a solo setup that is often acceptable; mitigations later are **semver tags** or a staging branch — not required now.
+Changes **only** in other published repos do **not** re-run the full **`ci.yml`** integration **from workflow-python** unless you trigger it another way (**`workflow_dispatch`**, a touch under those paths, or that repo’s **own** CI). When the monorepo and GitHub repos diverge, **know what actually ran**.
 
 ---
 
 ## Severity 5 — Scheduled workflows (repo setting)
 
-[`scheduled-security-scan.yml`](.github/workflows/scheduled-security-scan.yml) runs on a **weekly** cron (and **`workflow_dispatch`**). If GitHub has **disabled scheduled workflows** for the repo until you allow them, you get **no weekly run** until you enable them under **Settings → Actions → General → Workflow permissions** (wording varies slightly by UI).
-
-**Leave dogfood + scheduled on** when you want **`ci.yml`** regressions without waiting on **`sample-python-app`**. Scheduled has **no path filter** — it always targets the current `main` graph when the schedule fires.
+[`scheduled-security-scan.yml`](.github/workflows/scheduled-security-scan.yml) runs on a **weekly** cron (and **`workflow_dispatch`**). Scheduled workflows must be **allowed** in repo **Actions** settings or **cron will not run**. **Leave dogfood + scheduled on** when you want **`ci.yml`** regressions without waiting on **`sample-python-app`**. Scheduled has **no path filter** — it targets the current **`main`** graph when it fires.
 
 ---
 
-## Severity 4 — Dependabot for Actions
+## Severity 4 — Dependabot for third-party Actions
 
-Merge Dependabot PRs for **`actions/checkout`**, **`actions/setup-python`**, **`github/codeql-action`**, and similar on a rhythm you like — reduces surprise breakages; **not** urgent on every alert.
+Merge Dependabot PRs for **`actions/checkout`**, **`actions/setup-python`**, **`github/codeql-action`**, and similar **when convenient** — avoids surprise breakages; **not** urgent on every alert.
 
 ---
 
-## CHANGELOG / releases
+## Severity 2 — Optional memory aids
 
-Update **[`CHANGELOG.md`](CHANGELOG.md)** (and tags / release notes) when you care about a clear **“what changed”** story. Optional for tiny solo-only edits if you prefer.
+**[`CHANGELOG.md`](CHANGELOG.md)**, this table, and other one-line bump checklists — **optional**; use them when you want a paper trail.
+
+---
+
+## Severity 0 — Ignore until you care
+
+**Org / owner rename** (e.g. **`thadiust`**) if you are **not** doing it. **Roadmap** tooling (**Grype**, **SBOM**, **Sonar**, …) until you explicitly want it.
+
+---
+
+**Bottom line:** After a re-check, if **defaults** and **committed hashes** stay aligned for pip-installed tools, your standing **10** is still: **version bump → `refresh-pip-constraints.sh` → commit in the right repo(s)**.

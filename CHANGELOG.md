@@ -12,7 +12,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ### Changed
 
-- **`MAINTAINERS.md`:** severity scale (**10**–**0**); dogfood **path** blast radius vs sibling repos; **`@main`** consumer risk; scheduled workflow **settings**; Dependabot rhythm aligned with maintainer review pass.
+- **`MAINTAINERS.md`:** severity scale (**10**–**0**); **pip-tools** / **PyYAML** vs four **`constraints/`** trees; **`@main`** coupling (**7**); dogfood **paths** (**6**); scheduled **settings**; Dependabot (**4**); optional **CHANGELOG** (**2**); rename / roadmap (**0**); bottom-line bump checklist.
 
 ### Fixed
 

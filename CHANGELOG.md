@@ -8,11 +8,15 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ### Added
 
+- **[`CI_RISK_REGISTER.md`](CI_RISK_REGISTER.md):** CI threat / policy register (fork PR execution, pytest app **`pip install -r`** vs hashed tool installs, **`trivy_ignore_unfixed`**, **`pip_tools_version`** vs hashed **pip-tools** install, Bandit/pip-audit fallbacks, transitive locks, Docker artifacts, runner assumptions, Dependency Review, **`secrets: inherit`**). Linked from **[`README.md`](README.md)**, **[`SECURITY.md`](SECURITY.md)**, **[`MAINTAINERS.md`](MAINTAINERS.md)**; parent workspace **[`README.md`](../README.md)** fork section points here.
+- **README:** Dependency Review **caller** snippet on **`pull_request`**; expanded **pip hash pinning** (app graph, **`pip_tools` 7.5.3-only** hashed path).
 - **[`MAINTAINERS.md`](MAINTAINERS.md):** default version bump → **`scripts/refresh-pip-constraints.sh`** map (this repo + **sast-bandit** / **pip-audit-scan-action**), keep **dogfood** + **scheduled** workflows on, **Dependabot** and **CHANGELOG** guidance.
 
 ### Changed
 
-- **`MAINTAINERS.md`:** severity scale (**10**–**0**); **pip-tools** / **PyYAML** vs four **`constraints/`** trees; **`@main`** coupling (**7**); dogfood **paths** (**6**); scheduled **settings**; Dependabot (**4**); optional **CHANGELOG** (**2**); rename / roadmap (**0**); bottom-line bump checklist.
+- **`MAINTAINERS.md`:** severity scale (**10**–**0**); **pip-tools** / **PyYAML** vs four **`constraints/`** trees; **`pip_tools_version`** hashed install only for **7.5.3** + link to **`CI_RISK_REGISTER`**; **`@main`** coupling (**7**); dogfood **paths** (**6**); scheduled **settings**; Dependabot (**4**); optional **CHANGELOG** (**2**); rename / roadmap (**0**); bottom-line bump checklist.
+- **[`SECURITY.md`](SECURITY.md):** scope points at **`CI_RISK_REGISTER`**; notes **no** **`pull_request_target`** in this tree for untrusted code + secrets.
+- **[Pytest composite `README.md`](.github/actions/pytest/README.md):** **`pip install -r`** app deps vs hashed **pytest** tool install.
 
 ### Fixed
 

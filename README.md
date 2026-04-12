@@ -4,7 +4,9 @@
 
 **Lint in this repo:** [`.github/workflows/actionlint.yml`](.github/workflows/actionlint.yml) calls the reusable workflow **[`.github/workflows/reusable-actionlint.yml`](.github/workflows/reusable-actionlint.yml)** via **`uses: ./.github/workflows/reusable-actionlint.yml`** with **`validate_composite_actions: true`**. Other repositories can call **`thadiust/workflow-python/.github/workflows/reusable-actionlint.yml@main`** (solo dev) or **`@v…`** when you want a frozen snapshot. User-visible changes by tag are listed in **[CHANGELOG.md](CHANGELOG.md)**.
 
-**Integration CI:** [`.github/workflows/dogfood-ci.yml`](.github/workflows/dogfood-ci.yml) runs the full **`ci.yml`** graph against the tiny **[`dogfood/`](dogfood/)** fixture when workflow or action code changes. **[`.github/workflows/scheduled-security-scan.yml`](.github/workflows/scheduled-security-scan.yml)** repeats that on a **weekly** schedule (enable **Actions → Scheduled workflows** in repo settings if GitHub requires it). Leave both **on** so **`ci.yml`** regressions surface here before consumer apps. **[`MAINTAINERS.md`](MAINTAINERS.md)** is the short checklist for **default version bumps**, **hash constraint scripts**, **Dependabot**, and **CHANGELOG** habits. **[`ORG_PORTABILITY.md`](ORG_PORTABILITY.md)** explains replacing **`thadiust/…`** under another org. **[`SECURITY.md`](SECURITY.md)** is the vulnerability reporting policy.
+**Integration CI:** [`.github/workflows/dogfood-ci.yml`](.github/workflows/dogfood-ci.yml) runs the full **`ci.yml`** graph against the tiny **[`dogfood/`](dogfood/)** fixture when workflow or action code changes. **[`.github/workflows/scheduled-security-scan.yml`](.github/workflows/scheduled-security-scan.yml)** repeats that on a **weekly** schedule (enable **Actions → Scheduled workflows** in repo settings if GitHub requires it). Leave both **on** so **`ci.yml`** regressions surface here before consumer apps. **[`MAINTAINERS.md`](MAINTAINERS.md)** is the short checklist for **default version bumps**, **hash constraint scripts**, **Dependabot**, and **CHANGELOG** habits. **[`ORG_PORTABILITY.md`](ORG_PORTABILITY.md)** explains replacing **`thadiust/…`** under another org. **[`SECURITY.md`](SECURITY.md)** is the vulnerability reporting policy. **[`CI_RISK_REGISTER.md`](CI_RISK_REGISTER.md)** is the **threat / policy** cross-check (fork PRs, hash coverage, Trivy defaults, **`pip_tools_version`**, Dependency Review, artifacts).
+
+**Dependency Review** is **not** part of the **`ci.yml`** DAG; add a **caller** workflow on **`pull_request`** if you want GitHub’s dependency diff on every PR (snippet below).
 
 Reusable GitHub Actions workflow for Python security checks. App repositories call [`.github/workflows/ci.yml`](.github/workflows/ci.yml), which runs:
 
@@ -64,7 +66,7 @@ Across these jobs, a **finding** is anything that can fail the pipeline when the
 - **Parallel jobs vs minutes:** **`runner-info`** logs **`runner.*`** once (toggle **`run_runner_info: false`** to drop that job). **Ruff** and **Gitleaks** can run together; then **pytest**; then up to **three** scanners in parallel. Optional **Docker** / **Trivy image** add runners. Disable jobs via inputs to save minutes.
 - **Timeouts:** Ruff uses **`timeout-minutes: 15`**; other jobs use **`timeout-minutes: 30`** so a hung scanner does not burn the runner default (6 hours).
 - **Supply chain:** On **`workflow-python` branch `main`**, **`ci.yml`** uses **`@main`** for **Ruff**, **pytest**, **Trivy**, **`secrets-gitleaks`**, **`sast-bandit`**, and **`pip-audit-scan-action`** (solo-dev floating pins). For reproducible upgrades, **consumers** can call **`ci.yml@v…`** and rely on whatever nested pins that tag records. **`upload_code_scanning`** (default **`true`**) uploads **Gitleaks**, **Bandit**, **Trivy repo** (**`trivy`**), and **Trivy image** (**`trivy-image`**) SARIF via **`github/codeql-action/upload-sarif`** — caller workflows need **`permissions: security-events: write`** on the job that **`uses`** this workflow (see example). Upload steps use **`continue-on-error: true`** so missing **GitHub Advanced Security** does not fail the pipeline.
-- **Pip hash pinning:** **Ruff** and **pytest** composites use **`pip --require-hashes`** when a matching **`constraints/*.txt`** exists; other versions log a **warning**. **Lockfile enforcement** uses **[`install-pip-tools-hashed`](.github/actions/install-pip-tools-hashed/action.yml)** for default **`pip-tools==7.5.3`**. **reusable-actionlint** uses **[`install-pyyaml-hashed`](.github/actions/install-pyyaml-hashed/action.yml)**. **Bandit** (**`sast-bandit`**) and **pip-audit** (**`pip-audit-scan-action`**) use the same pattern: hashed installs for their **default** versions bundled in those repos; custom **`bandit_version`** / **`pip_audit_version`** fall back with **`::warning`**. Regenerate: **[`scripts/refresh-pip-constraints.sh`](scripts/refresh-pip-constraints.sh)** here; **`sast-bandit`** / **`scan-pip-audit`** each ship **`scripts/refresh-pip-constraints.sh`** for their constraint files.
+- **Pip hash pinning:** **Ruff** and the **pytest** *tool* install use **`pip --require-hashes`** when a matching **`constraints/*.txt`** exists; other versions log a **warning**. The **application** graph from **`pip install -r`** (**`pytest_requirements_file`**) is **not** hash-verified unless that file contains **PEP 503** hashes (e.g. **`pip-compile --generate-hashes`**) — a normal pinned lock without hashes is **integrity-checked only by version pins**, not by **`--require-hashes`**. **Lockfile enforcement** uses **[`install-pip-tools-hashed`](.github/actions/install-pip-tools-hashed/action.yml)** only when **`pip_tools_version`** is **exactly `7.5.3`**; any other value uses **plain** **`pip install pip-tools==…`** (see **[`CI_RISK_REGISTER.md`](CI_RISK_REGISTER.md)**). **reusable-actionlint** uses **[`install-pyyaml-hashed`](.github/actions/install-pyyaml-hashed/action.yml)**. **Bandit** (**`sast-bandit`**) and **pip-audit** (**`pip-audit-scan-action`**) use the same pattern: hashed installs for their **default** versions bundled in those repos; custom **`bandit_version`** / **`pip_audit_version`** or missing constraint files fall back with **`::warning`**. Regenerate: **[`scripts/refresh-pip-constraints.sh`](scripts/refresh-pip-constraints.sh)** here; **`sast-bandit`** / **`scan-pip-audit`** each ship **`scripts/refresh-pip-constraints.sh`** for their constraint files.
 - **`trivy_ignore_unfixed` (policy):** Default **`true`** hides **unfixed** CVEs from fail logic — good for merge noise; set **`false`** if the org wants **unfixable** issues visible in the gate, or add a **second** reporting-only workflow for visibility.
 - **Pre-commit vs CI:** **Ruff** + **Gitleaks** in CI are the **enforced** contract. **[pre-commit](https://pre-commit.com/)** is **recommended locally** (see job list above) but **not** run as a CI job here; add your own optional pre-commit workflow if the org wants hooks identical to developers’ machines.
 
@@ -183,3 +185,25 @@ jobs:
 This workflow is **`workflow_call` only** (full inputs, no 10-key `workflow_dispatch` limit). Call it from an app repo with the **full** `with:` list (see table). To run **manually**, use **`workflow_dispatch`** on the **app** repo (e.g. [`sample-python-app`](https://github.com/thadiust/sample-python-app)), which still calls this file via **`workflow_call`**.
 
 For reproducible upgrades, call **`uses: …/ci.yml@v…`** instead of **`@main`**; that snapshot’s **`ci.yml`** records whatever nested **`thadiust/*`** pins the release chose. While solo, **`@main`** tracks latest on **`workflow-python`** and nested actions (see supply chain note above).
+
+### Example: Dependency Review on pull requests
+
+**[`dependency-review.yml`](.github/workflows/dependency-review.yml)** is **`workflow_call`** only — it does **not** run automatically when you call **`ci.yml`**. Add a small workflow in the **consumer** repo (adjust **`@main`** / **`@v…`** to match how you pin **`ci.yml`**):
+
+```yaml
+name: Dependency Review
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  dependency-review:
+    uses: thadiust/workflow-python/.github/workflows/dependency-review.yml@main
+```
+
+If your org restricts **`pull-requests: read`**, follow [GitHub’s dependency review docs](https://docs.github.com/en/code-security/supply-chain-security/understanding-your-software-supply-chain/about-dependency-review) for required permissions.

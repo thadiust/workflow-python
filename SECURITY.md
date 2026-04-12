@@ -17,3 +17,4 @@ Include: affected component (**`ci.yml`**, a composite under **`.github/actions/
 
 - This repository ships **GitHub Actions** workflows and composites; findings may also apply to **nested** actions (**`secrets-gitleaks`**, **`trivy-scan`**, **`sast-bandit`**, **`pip-audit-scan-action`**) referenced from **`ci.yml`** — please say which layer you believe is affected.
 - **Fork PRs** and **public** repository behavior follow GitHub’s platform model; see the **[README](README.md)** sections on **public repositories** and **supported runners**.
+- **CI threat posture** (untrusted PR code, hash coverage, Trivy policy, artifacts, Dependency Review): **[`CI_RISK_REGISTER.md`](CI_RISK_REGISTER.md)**. Workflows here avoid **`pull_request_target`** for running untrusted code with base-repo secrets; integration uses **`pull_request`**, **`workflow_call`**, and **`workflow_dispatch`** as documented in the README.

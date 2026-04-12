@@ -7,7 +7,7 @@ Local composite used by the reusable workflow [`ci.yml`](../../workflows/ci.yml)
 ## What it runs
 
 1. Sets up Python via `actions/setup-python`
-2. Installs dependencies from `requirements_file`
+2. Installs dependencies from `requirements_file` with **`pip install -r`** (not **`--require-hashes`**) unless that file itself contains **PEP 503** hashes — a typical **`pip-compile`** lock **without** **`--generate-hashes`** is **version-pinned** but **not** hash-verified at install.
 3. Installs **`pytest`** with **`pip --require-hashes`** when **`constraints/pytest-<version>.txt`** exists for **`pytest_version`** (default **9.0.2**); otherwise **`pip install pytest==…`** with a warning. Regenerate constraints via **`scripts/refresh-pip-constraints.sh`** in **`workflow-python`** after bumps.
 4. Runs `python -m pytest` with `pytest_args`
 

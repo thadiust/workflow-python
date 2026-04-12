@@ -2,7 +2,7 @@
 
 **Scale:** **10** = immediate exploit or guaranteed compliance failure; **0** = polish / awareness. Numbers are **not** CVSS — they express **dominant CI risk** and **org onboarding** impact for this design.
 
-This file complements **[`README.md`](README.md)** (behavior, inputs) and **[`SECURITY.md`](SECURITY.md)** (reporting). **Mitigations** for fork/untrusted PRs are mostly **process and caller workflow design** (labels, environments, path filters, restricted workflows), not something this repo can remove without changing the product.
+This file complements **[`README.md`](README.md)** (behavior, inputs) and **[`SECURITY.md`](SECURITY.md)** (reporting). For **company rollout**, use **[`COMPANY_RUNBOOK.md`](COMPANY_RUNBOOK.md)** (severity-ranked checklist: forks, Trivy policy, hashes, Dependency Review, SAST scope, artifacts, runners). **Mitigations** for fork/untrusted PRs are mostly **process and caller workflow design** (labels, environments, path filters, restricted workflows), not something this repo can remove without changing the product.
 
 ---
 
@@ -14,7 +14,7 @@ This file complements **[`README.md`](README.md)** (behavior, inputs) and **[`SE
 
 **Mitigations (caller / org):** Restricted workflows for forks, **required labels** before heavy jobs, **environment** gates with required reviewers, **path filters**, separate workflows for **trusted** vs **untrusted** contributors. **Do not** use **`pull_request_target`** to run untrusted code with base-repo secrets — this repo’s workflows use **`pull_request`** / **`workflow_call`** / **`workflow_dispatch`** only (**no** **`pull_request_target`** in this tree).
 
-**Tokens / scopes:** See **[`README.md`](README.md) → Security and cost** (`permissions`, **`persist-credentials: false`**, artifact retention). For a **company** rollout, maintain a short **runbook**: which events fire (**`pull_request`** vs scheduled vs **`workflow_dispatch`**), which **`GITHUB_TOKEN`** scopes apply, and whether **fork PRs** build images or download artifacts.
+**Tokens / scopes:** See **[`README.md`](README.md) → Security and cost** (`permissions`, **`persist-credentials: false`**, artifact retention). For **org enforcement**, follow **[`COMPANY_RUNBOOK.md`](COMPANY_RUNBOOK.md)** §8 in **caller** repos (not only reading this library).
 
 ---
 
@@ -32,7 +32,7 @@ This file complements **[`README.md`](README.md)** (behavior, inputs) and **[`SE
 
 **Implication:** Integrity story is **“pytest tool install is hashed (when constraints match); app deps follow pip’s usual trust model.”**
 
-**Hardening options:** Document that callers who need **`--require-hashes`** for the app must supply a **hash-mode** lockfile (or extend the composite with an input to pass **`--require-hashes`** / a dedicated constraints file — heavier).
+**Hardening options:** Use a **hash-mode** lockfile (**`pip-compile --generate-hashes`**) and set **`pytest_app_require_hashes: true`** on **`ci.yml`**, or rely on **`enforce_pip_tools_lockfile`** + pinned locks for **reproducibility** (without **`--require-hashes`** on the app install unless hashes are present).
 
 ---
 
@@ -88,7 +88,7 @@ This file complements **[`README.md`](README.md)** (behavior, inputs) and **[`SE
 
 **What:** **[`dependency-review.yml`](.github/workflows/dependency-review.yml)** is **`workflow_call`**-only — correct, but **easy to omit** when onboarding.
 
-**Mitigation:** Add a **caller** workflow on **`pull_request`** that **`uses`** it (snippet in **[`README.md`](README.md)**).
+**Mitigation:** Call **`python-pr-suite.yml`** (**Dependency Review** ∥ **`ci.yml`**), copy **`examples/consumer-pull-request-ci.yml`**, or add a **caller** snippet (see **[`README.md`](README.md)**).
 
 ---
 
@@ -102,7 +102,7 @@ This file complements **[`README.md`](README.md)** (behavior, inputs) and **[`SE
 
 ## 2 — `secrets: inherit` on reusable calls (dogfood / scheduled)
 
-**What:** **[`dogfood-ci.yml`](.github/workflows/dogfood-ci.yml)** and **[`scheduled-security-scan.yml`](.github/workflows/scheduled-security-scan.yml)** use **`secrets: inherit`**. Harmless when **no** secrets exist; for **defense-in-depth**, prefer **explicit** **`secrets:`** or **omit** when unused.
+**What:** **[`dogfood-ci.yml`](.github/workflows/dogfood-ci.yml)** and **[`scheduled-security-scan.yml`](.github/workflows/scheduled-security-scan.yml)** **omit** **`secrets: inherit`** when no secrets are passed (defense in depth). If you add **repository secrets** later, pass them **explicitly** via **`secrets:`** on the **`uses:`** line instead of blanket **`inherit`**.
 
 ---
 
@@ -113,10 +113,21 @@ This file complements **[`README.md`](README.md)** (behavior, inputs) and **[`SE
 
 ---
 
+## Positive findings (no change required for correctness)
+
+- **No `pull_request_target`** in this tree for running untrusted checkout with base-repo secrets (grep).
+- **Gitleaks** and **Trivy** release downloads verify **SHA256** against upstream checksum files in their composites.
+- **Path traversal** on workflow inputs is validated consistently (relative paths, no `..`).
+- Default workflow **`permissions: contents: read`**; SARIF upload jobs add **`security-events: write`** only where needed.
+- **Trivy** fs+config SARIF merge in **`trivy-scan`** reflects **Code Scanning** upload constraints.
+
+---
+
 ## Related docs
 
 | Topic | Where |
 |--------|--------|
+| Company rollout checklist | **[`COMPANY_RUNBOOK.md`](COMPANY_RUNBOOK.md)** |
 | Fork PRs, token scope, artifacts, pip hash summary | **[`README.md`](README.md)** → **Security and cost** |
 | Bump tool defaults → refresh constraints | **[`MAINTAINERS.md`](MAINTAINERS.md)** |
 | Replace `thadiust/` owner | **[`ORG_PORTABILITY.md`](ORG_PORTABILITY.md)** |

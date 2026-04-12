@@ -28,7 +28,6 @@ permissions:
 jobs:
   full-pipeline:
     uses: ./.github/workflows/ci.yml
-    secrets: inherit
     with:
       working_directory: dogfood
       run_docker_build: false

@@ -1,0 +1,50 @@
+# Weekly visibility for unfixed CVEs without changing the main ci.yml default (trivy_ignore_unfixed).
+# Report-only: does not fail the workflow on findings. Uploads SARIF when Advanced Security is available.
+name: Scheduled Trivy (unfixed CVE visibility)
+
+on:
+  schedule:
+    - cron: "0 7 * * 1"
+  workflow_dispatch:
+
+concurrency:
+  group: trivy-unfixed-${{ github.repository }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  security-events: write
+
+jobs:
+  trivy-dogfood-unfixed:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Trivy filesystem (include unfixed, report-only)
+        id: trivy
+        uses: thadiust/trivy-scan@main
+        with:
+          scan_kind: filesystem
+          trivy_version: "0.69.3"
+          working_directory: dogfood
+          mode: both
+          paths: .
+          severity: HIGH,CRITICAL
+          ignore_unfixed: false
+          fail_on_findings: false
+          write_sarif: true
+          sarif_filename: trivy-unfixed-report.sarif
+
+      - name: Upload SARIF to Code Scanning
+        if: ${{ (success() || failure()) && steps.trivy.outputs.sarif_path != '' }}
+        continue-on-error: true
+        uses: github/codeql-action/upload-sarif@v4
+        with:
+          sarif_file: ${{ steps.trivy.outputs.sarif_path }}
+          category: trivy-unfixed-report

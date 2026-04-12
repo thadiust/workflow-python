@@ -32,6 +32,11 @@ inputs:
     required: false
     default: ""
 
+  app_requirements_require_hashes:
+    description: "If true, pip install -r requirements_file uses --require-hashes (requirements_file must include PEP 503 hashes, e.g. pip-compile --generate-hashes)"
+    required: false
+    default: "false"
+
 runs:
   using: "composite"
   steps:
@@ -80,7 +85,12 @@ runs:
           read -r -a extra <<< "${{ inputs.extra_install_args }}"
         fi
 
-        python -m pip install --disable-pip-version-check -q "${extra[@]}" -r "${{ inputs.requirements_file }}"
+        hash_args=()
+        if [ "${{ inputs.app_requirements_require_hashes }}" = "true" ]; then
+          hash_args=(--require-hashes)
+        fi
+
+        python -m pip install --disable-pip-version-check -q "${extra[@]}" "${hash_args[@]}" -r "${{ inputs.requirements_file }}"
 
         PV="${{ inputs.pytest_version }}"
         CF="${GITHUB_ACTION_PATH}/constraints/pytest-${PV}.txt"

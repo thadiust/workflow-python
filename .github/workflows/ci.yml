@@ -37,6 +37,11 @@ on:
         required: false
         type: string
         default: "7.5.3"
+      pip_tools_require_hashed_install:
+        description: "If true with enforce_pip_tools_lockfile, fail when pip_tools_version is not 7.5.3 (no bundled hash constraints for other versions)"
+        required: false
+        type: boolean
+        default: false
       python_version:
         description: "Python version for lint and scan jobs"
         required: false
@@ -102,6 +107,11 @@ on:
         required: false
         type: string
         default: ""
+      pytest_app_require_hashes:
+        description: "If true, pytest job uses pip --require-hashes when installing pytest_requirements_file (file must include PEP 503 hashes, e.g. pip-compile --generate-hashes)"
+        required: false
+        type: boolean
+        default: false
       run_gitleaks:
         description: "Whether to run the Gitleaks secrets scan job (in parallel with Ruff when both are enabled)"
         required: false
@@ -323,6 +333,7 @@ jobs:
           requirements_file: ${{ inputs.pytest_requirements_file || 'requirements.txt' }}
           pytest_version: ${{ inputs.pytest_version || '9.0.2' }}
           pytest_args: ${{ inputs.pytest_args }}
+          app_requirements_require_hashes: ${{ inputs.pytest_app_require_hashes && 'true' || 'false' }}
 
   trivy-repo-scan:
     needs:
@@ -423,6 +434,12 @@ jobs:
         with:
           fetch-depth: 1
           persist-credentials: false
+
+      - name: Block unhashed pip-tools when policy requires hashed install
+        if: ${{ inputs.enforce_pip_tools_lockfile && inputs.pip_tools_require_hashed_install && inputs.pip_tools_version != '7.5.3' }}
+        run: |
+          echo "::error::pip_tools_require_hashed_install is true but pip_tools_version is '${{ inputs.pip_tools_version }}' (hashed pip-tools is only bundled for 7.5.3). Use pip_tools_version 7.5.3, set pip_tools_require_hashed_install false, or extend .github/actions/install-pip-tools-hashed/constraints.txt for another version."
+          exit 1
 
       - name: Setup Python (lockfile enforcement)
         if: ${{ inputs.enforce_pip_tools_lockfile }}

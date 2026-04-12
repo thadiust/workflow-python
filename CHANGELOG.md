@@ -8,15 +8,26 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ### Added
 
-- **[`CI_RISK_REGISTER.md`](CI_RISK_REGISTER.md):** CI threat / policy register (fork PR execution, pytest app **`pip install -r`** vs hashed tool installs, **`trivy_ignore_unfixed`**, **`pip_tools_version`** vs hashed **pip-tools** install, Bandit/pip-audit fallbacks, transitive locks, Docker artifacts, runner assumptions, Dependency Review, **`secrets: inherit`**). Linked from **[`README.md`](README.md)**, **[`SECURITY.md`](SECURITY.md)**, **[`MAINTAINERS.md`](MAINTAINERS.md)**; parent workspace **[`README.md`](../README.md)** fork section points here.
-- **README:** Dependency Review **caller** snippet on **`pull_request`**; expanded **pip hash pinning** (app graph, **`pip_tools` 7.5.3-only** hashed path).
-- **[`MAINTAINERS.md`](MAINTAINERS.md):** default version bump → **`scripts/refresh-pip-constraints.sh`** map (this repo + **sast-bandit** / **pip-audit-scan-action**), keep **dogfood** + **scheduled** workflows on, **Dependabot** and **CHANGELOG** guidance.
+- **[`COMPANY_RUNBOOK.md`](COMPANY_RUNBOOK.md):** severity-ranked **company rollout** checklist (fork / untrusted PR policy, Trivy unfixed defaults, app hash path, Dependency Review, Bandit vs enterprise SAST, Docker artifacts, **`pip_tools`** strict mode, runners). Linked from **`README`**, **`SECURITY`**, **`CI_RISK_REGISTER`**.
+- **[`python-pr-suite.yml`](.github/workflows/python-pr-suite.yml):** reusable **`workflow_call`** that runs **Dependency Review** and **`ci.yml`** in **parallel** for PR onboarding.
+- **[`examples/consumer-pull-request-ci.yml`](examples/consumer-pull-request-ci.yml):** copy-paste consumer template using **`python-pr-suite.yml`**.
+- **[`scheduled-trivy-unfixed-report.yml`](.github/workflows/scheduled-trivy-unfixed-report.yml):** weekly **`dogfood/`** Trivy run with **`ignore_unfixed: false`**, **`fail_on_findings: false`**, optional SARIF upload (visibility without changing main gate default).
+- **`ci.yml` inputs:** **`pytest_app_require_hashes`**, **`pip_tools_require_hashed_install`** (enterprise strictness for app **`pip install -r`** and **pip-tools** version **7.5.3**).
+- **Pytest composite:** **`app_requirements_require_hashes`** (`--require-hashes` on app requirements when **`true`**).
+- **`CI_RISK_REGISTER.md`:** **Positive findings** subsection (no **`pull_request_target`**, checksum verification, path validation, permissions, Trivy SARIF merge).
+
+### Changed
+
+- **`dogfood-ci.yml`** / **`scheduled-security-scan.yml`:** drop **`secrets: inherit`** when unused (defense in depth).
+- **`README.md`:** **SAST scope (Bandit)**; **`python-pr-suite`** + examples; **`scheduled-trivy-unfixed-report`**; **`COMPANY_RUNBOOK`** link; inputs table for new booleans; Dependency Review section prefers **`python-pr-suite`**.
+- **`MAINTAINERS.md`:** **`pip_tools_require_hashed_install`** note; **`COMPANY_RUNBOOK`** cross-link for enterprise **pip-tools** policy.
+- **[`SECURITY.md`](SECURITY.md):** links **`COMPANY_RUNBOOK`**.
 
 ### Changed
 
 - **`MAINTAINERS.md`:** severity scale (**10**–**0**); **pip-tools** / **PyYAML** vs four **`constraints/`** trees; **`pip_tools_version`** hashed install only for **7.5.3** + link to **`CI_RISK_REGISTER`**; **`@main`** coupling (**7**); dogfood **paths** (**6**); scheduled **settings**; Dependabot (**4**); optional **CHANGELOG** (**2**); rename / roadmap (**0**); bottom-line bump checklist.
 - **[`SECURITY.md`](SECURITY.md):** scope points at **`CI_RISK_REGISTER`**; notes **no** **`pull_request_target`** in this tree for untrusted code + secrets.
-- **[Pytest composite `README.md`](.github/actions/pytest/README.md):** **`pip install -r`** app deps vs hashed **pytest** tool install.
+- **[Pytest composite `README.md`](.github/actions/pytest/README.md):** **`pip install -r`** app deps vs hashed **pytest** tool install; **`app_requirements_require_hashes`** input.
 
 ### Fixed
 

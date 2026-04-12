@@ -1,0 +1,26 @@
+# Reusable: Dependency Review + full ci.yml in one caller job (parallel jobs).
+# Use from app repos on pull_request — see examples/consumer-pull-request-ci.yml and COMPANY_RUNBOOK.md.
+name: Python PR suite (dependency review + security pipeline)
+
+on:
+  workflow_call:
+    inputs:
+      working_directory:
+        description: "Forwarded to ci.yml (project root relative to repo)"
+        required: false
+        type: string
+        default: "."
+
+permissions:
+  contents: read
+  pull-requests: read
+  security-events: write
+
+jobs:
+  dependency-review:
+    uses: ./.github/workflows/dependency-review.yml
+
+  python-security-pipeline:
+    uses: ./.github/workflows/ci.yml
+    with:
+      working_directory: ${{ inputs.working_directory }}

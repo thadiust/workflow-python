@@ -21,7 +21,7 @@ When you bump a default for **ruff**, **pytest**, **bandit**, **pip-audit**, **p
 
 **Layout:** Hashed pip constraint **trees** named **`constraints/`** exist for **ruff**, **pytest**, **bandit**, and **pip-audit**. **pip-tools** and **PyYAML** use **`install-*-hashed/constraints.txt`** at the composite root — **not** a **`constraints/`** subfolder (hence four **`constraints/`** trees in the repo, not six).
 
-**`pip_tools_version`:** **[`install-pip-tools-hashed`](.github/actions/install-pip-tools-hashed/action.yml)** applies **`--require-hashes`** only when the version is **exactly `7.5.3`**. Any other **`pip_tools_version`** uses **plain** **`pip install pip-tools==…`** until you add a matching **`constraints.txt`** and wire the composite — see **[`CI_RISK_REGISTER.md`](CI_RISK_REGISTER.md)**.
+**`pip_tools_version`:** **[`install-pip-tools-hashed`](.github/actions/install-pip-tools-hashed/action.yml)** applies **`--require-hashes`** only when the version is **exactly `7.5.3`**. Any other **`pip_tools_version`** uses **plain** **`pip install pip-tools==…`** until you add a matching **`constraints.txt`** and wire the composite — see **[`CI_RISK_REGISTER.md`](CI_RISK_REGISTER.md)**. Enterprise: **`pip_tools_require_hashed_install: true`** on **`ci.yml`** (with **`enforce_pip_tools_lockfile`**) **fails** if version ≠ **7.5.3** until constraints exist for that version.
 
 **Requires:** Python **3.11** and **pip-tools** (the scripts create a venv and install pip-tools).
 

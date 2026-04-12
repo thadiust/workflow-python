@@ -1,0 +1,26 @@
+# Copy into YOUR app repo as .github/workflows/ci.yml (or another name).
+# Replace OWNER/REPO with workflow-python location; pin @v… for reproducible CI.
+#
+# Runs Dependency Review and the full Python security pipeline in parallel on every PR.
+
+name: Pull request checks
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+  pull-requests: read
+  security-events: write
+
+concurrency:
+  group: pr-${{ github.repository }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  python-pr-suite:
+    uses: OWNER/REPO/.github/workflows/python-pr-suite.yml@main
+    # Optional: pass app root if not repository root
+    # with:
+    #   working_directory: "services/api"

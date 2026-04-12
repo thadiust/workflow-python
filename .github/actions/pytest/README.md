@@ -21,5 +21,6 @@ On failure, it writes a short **Job Summary** with copy-paste commands.
 | `working_directory` | `.` | Repo-relative directory to run from. |
 | `requirements_file` | `requirements.txt` | Relative to `working_directory`. |
 | `extra_install_args` | *(empty)* | Extra args passed to `pip install -r ...` (space-separated). |
+| `app_requirements_require_hashes` | `false` | If **`true`**, app **`pip install -r`** uses **`--require-hashes`** (requirements file must include PEP 503 hashes). |
 | `pytest_version` | `9.0.2` | Exact pytest version string. |
 | `pytest_args` | *(empty)* | Space-separated args; **empty** = auto (`tests/` or `test/` or discovery). |

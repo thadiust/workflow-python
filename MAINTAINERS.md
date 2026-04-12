@@ -4,7 +4,7 @@
 
 **Frequency:** for constraint refresh, only when default version numbers or bundled pins change — not every commit.
 
-**Pre-commit:** **[`.pre-commit-config.yaml`](.pre-commit-config.yaml)** hook **`rev:`** tags should track **`ci.yml`** defaults **`ruff_version`** and **`gitleaks_version`** when you bump those inputs.
+**Pre-commit:** **[`.pre-commit-config.yaml`](.pre-commit-config.yaml)** — bump **Ruff** / **Gitleaks** **`rev:`** when **`ci.yml`** **`ruff_version`** / **`gitleaks_version`** change; run **`pre-commit autoupdate`** for **`pre-commit/pre-commit-hooks`** (and review the diff).
 
 ---
 

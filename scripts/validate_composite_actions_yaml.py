@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """PyYAML-parse every .github/actions/**/action.yml|action.yaml (syntax only)."""
+
 from __future__ import annotations
 
 import pathlib
@@ -8,7 +9,10 @@ import sys
 try:
     import yaml
 except ImportError:
-    print("PyYAML is required (pre-commit should install additional_dependencies).", file=sys.stderr)
+    print(
+        "PyYAML is required (pre-commit should install additional_dependencies).",
+        file=sys.stderr,
+    )
     sys.exit(2)
 
 

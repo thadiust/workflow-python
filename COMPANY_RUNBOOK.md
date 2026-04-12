@@ -110,6 +110,22 @@ When **`format` ≠ `json`**, **pip-audit** runs **twice** (JSON for counts, the
 
 ---
 
+## Residual gaps (not oversights)
+
+The items below stay **open** until **product** or **org** choices change — they are not unfinished YAML polish inside **`workflow-python`** alone:
+
+| Sev | Topic | Why it remains |
+|-----|--------|----------------|
+| **8** | Untrusted PR **`pip install` / Docker | Standard CI **runs** contributor code; mitigation is **caller** policy (labels, environments, fork rules). |
+| **7** | **`trivy_ignore_unfixed`** on main gate | **Deliberate** default for merge velocity; strict programs set **`false`** or rely on **scheduled** unfixed visibility. |
+| **7** | App **`--require-hashes`** | **`pytest_app_require_hashes`** defaults **off**; auditors drive **org default** + hash-mode lockfiles. |
+| **6** | SAST depth | **Bandit**-centric by design; **CodeQL** / **Sonar** are **additional** products. |
+| **5** | **`python-pr-suite`** surface | Forwards a **wide** set of **`ci.yml`** inputs; exotic knobs still need a **two-job** caller or suite PR. |
+| **5** | Docker artifacts / fork ACLs | **Org** settings and **caller** workflow choice. |
+| **4** | No Dependency Review on **push** | **GitHub** model: DR is **PR**-oriented; add a separate policy for **default branch** if required. |
+
+---
+
 ## Related
 
 - **[`CI_RISK_REGISTER.md`](CI_RISK_REGISTER.md)** — detailed risk list + positive findings.

@@ -1,42 +1,80 @@
 # Reusable: Dependency Review + full ci.yml (parallel jobs).
-# For apps that need more ci.yml inputs than listed here, call dependency-review.yml and ci.yml in two jobs (see README).
+# Forwards a broad set of ci.yml inputs (defaults match ci.yml) so PR runs can mirror push/dispatch callers.
+# For knobs not listed here, call dependency-review.yml and ci.yml as two jobs (see README).
 name: Python PR suite (dependency review + security pipeline)
 
 on:
   workflow_call:
     inputs:
       working_directory:
-        description: "Forwarded to ci.yml (project root relative to repo)"
         required: false
         type: string
         default: "."
       requirements_file:
-        description: "Forwarded to ci.yml"
         required: false
         type: string
         default: "requirements.txt"
       enforce_pip_tools_lockfile:
-        description: "Forwarded to ci.yml"
         required: false
         type: boolean
         default: false
       pip_tools_requirements_in:
-        description: "Forwarded to ci.yml when enforce_pip_tools_lockfile is true"
         required: false
         type: string
         default: "requirements.in"
+      python_version:
+        required: false
+        type: string
+        default: "3.11"
+      fail_on_vuln:
+        required: false
+        type: boolean
+        default: true
+      run_ruff:
+        required: false
+        type: boolean
+        default: true
+      ruff_version:
+        required: false
+        type: string
+        default: "0.15.9"
+      run_pytest:
+        required: false
+        type: boolean
+        default: true
+      pytest_requirements_file:
+        required: false
+        type: string
+        default: "requirements.txt"
+      pytest_version:
+        required: false
+        type: string
+        default: "9.0.2"
+      run_gitleaks:
+        required: false
+        type: boolean
+        default: true
+      run_pip_audit_scan:
+        required: false
+        type: boolean
+        default: true
+      run_bandit:
+        required: false
+        type: boolean
+        default: true
+      upload_code_scanning:
+        required: false
+        type: boolean
+        default: true
       run_docker_build:
-        description: "Forwarded to ci.yml"
         required: false
         type: boolean
         default: false
       dockerfile:
-        description: "Forwarded to ci.yml when run_docker_build is true"
         required: false
         type: string
         default: "Dockerfile"
       trivy_image_fail_on_findings:
-        description: "Forwarded to ci.yml (Trivy image job)"
         required: false
         type: boolean
         default: true
@@ -57,6 +95,17 @@ jobs:
       requirements_file: ${{ inputs.requirements_file }}
       enforce_pip_tools_lockfile: ${{ inputs.enforce_pip_tools_lockfile }}
       pip_tools_requirements_in: ${{ inputs.pip_tools_requirements_in }}
+      python_version: ${{ inputs.python_version }}
+      fail_on_vuln: ${{ inputs.fail_on_vuln }}
+      run_ruff: ${{ inputs.run_ruff }}
+      ruff_version: ${{ inputs.ruff_version }}
+      run_pytest: ${{ inputs.run_pytest }}
+      pytest_requirements_file: ${{ inputs.pytest_requirements_file }}
+      pytest_version: ${{ inputs.pytest_version }}
+      run_gitleaks: ${{ inputs.run_gitleaks }}
+      run_pip_audit_scan: ${{ inputs.run_pip_audit_scan }}
+      run_bandit: ${{ inputs.run_bandit }}
+      upload_code_scanning: ${{ inputs.upload_code_scanning }}
       run_docker_build: ${{ inputs.run_docker_build }}
       dockerfile: ${{ inputs.dockerfile }}
       trivy_image_fail_on_findings: ${{ inputs.trivy_image_fail_on_findings }}

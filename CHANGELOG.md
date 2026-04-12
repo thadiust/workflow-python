@@ -9,7 +9,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 ### Added
 
 - **[`COMPANY_RUNBOOK.md`](COMPANY_RUNBOOK.md):** severity-ranked **company rollout** checklist (fork / untrusted PR policy, Trivy unfixed defaults, app hash path, Dependency Review, Bandit vs enterprise SAST, Docker artifacts, **`pip_tools`** strict mode, runners). Linked from **`README`**, **`SECURITY`**, **`CI_RISK_REGISTER`**.
-- **[`python-pr-suite.yml`](.github/workflows/python-pr-suite.yml):** reusable **`workflow_call`** — **Dependency Review** ∥ **`ci.yml`**. Forwards **`working_directory`**, **`requirements_file`**, **`enforce_pip_tools_lockfile`**, **`pip_tools_requirements_in`**, **`run_docker_build`**, **`dockerfile`**, **`trivy_image_fail_on_findings`** (optional; other **`ci.yml`** inputs use callee defaults). Apps with heavier customization: two-job caller or extend the suite.
+- **[`python-pr-suite.yml`](.github/workflows/python-pr-suite.yml):** reusable **`workflow_call`** — **Dependency Review** ∥ **`ci.yml`**, forwarding a **wide** input set (Python, Ruff/pytest versions, scanner toggles, lockfile, Docker, SARIF, Trivy image gate — defaults match **`ci.yml`**). Callers needing **other** **`ci.yml`** inputs use a two-job workflow or extend the suite.
 - **[`examples/consumer-pull-request-ci.yml`](examples/consumer-pull-request-ci.yml):** copy-paste consumer template using **`python-pr-suite.yml`**.
 - **[`scheduled-trivy-unfixed-report.yml`](.github/workflows/scheduled-trivy-unfixed-report.yml):** weekly **`dogfood/`** Trivy run with **`ignore_unfixed: false`**, **`fail_on_findings: false`**, optional SARIF upload (visibility without changing main gate default).
 - **`ci.yml` inputs:** **`pytest_app_require_hashes`**, **`pip_tools_require_hashed_install`** (enterprise strictness for app **`pip install -r`** and **pip-tools** version **7.5.3**).
@@ -18,6 +18,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ### Changed
 
+- **`python-pr-suite.yml`:** expanded forwarding for **PR/push parity** in typical apps (see workflow file). **`COMPANY_RUNBOOK.md`:** **Residual gaps (not oversights)** table. **`README`:** link to residual section.
 - **`dogfood-ci.yml`** / **`scheduled-security-scan.yml`:** drop **`secrets: inherit`** when unused (defense in depth).
 - **`README.md`:** **SAST scope (Bandit)**; **`python-pr-suite`** + examples; **`scheduled-trivy-unfixed-report`**; **`COMPANY_RUNBOOK`** link; inputs table for new booleans; Dependency Review section prefers **`python-pr-suite`**.
 - **`MAINTAINERS.md`:** **`pip_tools_require_hashed_install`** note; **`COMPANY_RUNBOOK`** cross-link for enterprise **pip-tools** policy.

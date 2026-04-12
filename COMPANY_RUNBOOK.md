@@ -51,7 +51,7 @@ Enforcement lives in **caller** repositories (branch protection, environments, w
 
 **[`dependency-review.yml`](.github/workflows/dependency-review.yml)** is **not** inside **`ci.yml`**.
 
-**Default onboarding:** Call **[`python-pr-suite.yml`](.github/workflows/python-pr-suite.yml)** from a **`pull_request`** workflow (runs **Dependency Review** ∥ **`ci.yml`**), or copy **[`examples/consumer-pull-request-ci.yml`](examples/consumer-pull-request-ci.yml)**.
+**Default onboarding:** Call **[`python-pr-suite.yml`](.github/workflows/python-pr-suite.yml)** from a **`pull_request`** workflow (runs **Dependency Review** ∥ **`ci.yml`**; optional **`with:`** forwards lockfile / Docker / Trivy-image inputs — see workflow file — with other **`ci.yml`** inputs left at defaults), or copy **[`examples/consumer-pull-request-ci.yml`](examples/consumer-pull-request-ci.yml)**.
 
 ---
 

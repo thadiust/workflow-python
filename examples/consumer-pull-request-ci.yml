@@ -21,6 +21,9 @@ concurrency:
 jobs:
   python-pr-suite:
     uses: OWNER/REPO/.github/workflows/python-pr-suite.yml@main
-    # Optional: pass app root if not repository root
+    # Optional forwarded inputs (defaults match ci.yml). Example: lockfile + Docker + lenient image gate:
     # with:
     #   working_directory: "services/api"
+    #   enforce_pip_tools_lockfile: true
+    #   run_docker_build: true
+    #   trivy_image_fail_on_findings: false

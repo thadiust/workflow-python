@@ -43,7 +43,7 @@ on:
         type: boolean
         default: false
       python_version:
-        description: "Python version for lint and scan jobs"
+        description: "Python version for pre-commit, pytest, Bandit, and pip-audit jobs"
         required: false
         type: string
         default: "3.11"
@@ -62,38 +62,8 @@ on:
         required: false
         type: string
         default: "2.7.3"
-      run_ruff:
-        description: "Whether to run the standalone Ruff composite action (redundant if pre-commit already runs ruff/ruff-format; default false)"
-        required: false
-        type: boolean
-        default: false
-      ruff_version:
-        description: "Exact Ruff version for the lint job"
-        required: false
-        type: string
-        default: "0.15.9"
-      ruff_paths:
-        description: "Space-separated paths relative to working_directory for ruff check and format"
-        required: false
-        type: string
-        default: "."
-      ruff_config:
-        description: "Optional Ruff config path relative to working_directory"
-        required: false
-        type: string
-        default: ""
-      run_ruff_format:
-        description: "Whether to run ruff format --check after ruff check"
-        required: false
-        type: boolean
-        default: true
-      ruff_fail_on_findings:
-        description: "Fail the Ruff job when check or format reports work to do"
-        required: false
-        type: boolean
-        default: true
       run_pytest:
-        description: "Whether to run pytest (after pre-commit, optional Ruff, and Gitleaks when those jobs are enabled)"
+        description: "Whether to run pytest (after pre-commit and Gitleaks when those jobs are enabled)"
         required: false
         type: boolean
         default: true
@@ -118,7 +88,7 @@ on:
         type: boolean
         default: false
       run_gitleaks:
-        description: "Whether to run the Gitleaks secrets scan job (full history; in parallel with pre-commit and optional Ruff when enabled)"
+        description: "Whether to run the Gitleaks secrets scan job (full history; in parallel with pre-commit when both enabled)"
         required: false
         type: boolean
         default: true
@@ -256,7 +226,7 @@ jobs:
           echo "runner.environment=${{ runner.environment }}"
           echo "runner.name=${{ runner.name }}"
 
-  # Fast gate: pre-commit (hooks = local source of truth) ∥ optional standalone Ruff ∥ Gitleaks (full history). Then pytest. Then Trivy, Bandit, pip-audit in parallel.
+  # Fast gate: pre-commit (Ruff + hooks; .pre-commit-config.yaml) ∥ Gitleaks (full history). Then pytest. Then Trivy, Bandit, pip-audit in parallel.
   # Docker build runs only after that wave (each job may be skipped only when its toggle is off). Then Trivy image scan (leaf).
   pre-commit-check:
     if: ${{ inputs.run_pre_commit != false }}
@@ -276,30 +246,6 @@ jobs:
 
       - name: Run pre-commit
         uses: pre-commit/action@v3.0.0
-
-  ruff-lint:
-    if: ${{ inputs.run_ruff }}
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-
-    steps:
-      - name: Checkout repo
-        uses: actions/checkout@v6
-        with:
-          fetch-depth: 1
-          persist-credentials: false
-
-      # Local paths (`./.github/actions/...`) resolve on the *caller* repo when this workflow is reused — use the workflow-python repo ref.
-      - name: Run Ruff
-        uses: thadiust/workflow-python/.github/actions/ruff@main
-        with:
-          python_version: ${{ inputs.python_version }}
-          ruff_version: ${{ inputs.ruff_version }}
-          working_directory: ${{ inputs.working_directory }}
-          paths: ${{ inputs.ruff_paths || '.' }}
-          config: ${{ inputs.ruff_config || '' }}
-          run_format_check: ${{ inputs.run_ruff_format != false }}
-          fail_on_findings: ${{ inputs.ruff_fail_on_findings != false }}
 
   gitleaks-scan:
     if: ${{ inputs.run_gitleaks && !cancelled() }}
@@ -337,9 +283,8 @@ jobs:
   pytest-test:
     needs:
       - pre-commit-check
-      - ruff-lint
       - gitleaks-scan
-    if: ${{ inputs.run_pytest && !cancelled() && (needs['pre-commit-check'].result == 'success' || needs['pre-commit-check'].result == 'skipped') && (needs['ruff-lint'].result == 'success' || needs['ruff-lint'].result == 'skipped') && (needs['gitleaks-scan'].result == 'success' || (needs['gitleaks-scan'].result == 'skipped' && inputs.run_gitleaks == false)) }}
+    if: ${{ inputs.run_pytest && !cancelled() && (needs['pre-commit-check'].result == 'success' || needs['pre-commit-check'].result == 'skipped') && (needs['gitleaks-scan'].result == 'success' || (needs['gitleaks-scan'].result == 'skipped' && inputs.run_gitleaks == false)) }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
 
@@ -363,10 +308,9 @@ jobs:
   trivy-repo-scan:
     needs:
       - pre-commit-check
-      - ruff-lint
       - gitleaks-scan
       - pytest-test
-    if: ${{ inputs.run_trivy && !cancelled() && (needs['pre-commit-check'].result == 'success' || needs['pre-commit-check'].result == 'skipped') && (needs['ruff-lint'].result == 'success' || needs['ruff-lint'].result == 'skipped') && (needs['gitleaks-scan'].result == 'success' || (needs['gitleaks-scan'].result == 'skipped' && inputs.run_gitleaks == false)) && (needs['pytest-test'].result == 'success' || (needs['pytest-test'].result == 'skipped' && inputs.run_pytest == false)) }}
+    if: ${{ inputs.run_trivy && !cancelled() && (needs['pre-commit-check'].result == 'success' || needs['pre-commit-check'].result == 'skipped') && (needs['gitleaks-scan'].result == 'success' || (needs['gitleaks-scan'].result == 'skipped' && inputs.run_gitleaks == false)) && (needs['pytest-test'].result == 'success' || (needs['pytest-test'].result == 'skipped' && inputs.run_pytest == false)) }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
     permissions:
@@ -406,10 +350,9 @@ jobs:
   bandit-scan:
     needs:
       - pre-commit-check
-      - ruff-lint
       - gitleaks-scan
       - pytest-test
-    if: ${{ inputs.run_bandit && !cancelled() && (needs['pre-commit-check'].result == 'success' || needs['pre-commit-check'].result == 'skipped') && (needs['ruff-lint'].result == 'success' || needs['ruff-lint'].result == 'skipped') && (needs['gitleaks-scan'].result == 'success' || (needs['gitleaks-scan'].result == 'skipped' && inputs.run_gitleaks == false)) && (needs['pytest-test'].result == 'success' || (needs['pytest-test'].result == 'skipped' && inputs.run_pytest == false)) }}
+    if: ${{ inputs.run_bandit && !cancelled() && (needs['pre-commit-check'].result == 'success' || needs['pre-commit-check'].result == 'skipped') && (needs['gitleaks-scan'].result == 'success' || (needs['gitleaks-scan'].result == 'skipped' && inputs.run_gitleaks == false)) && (needs['pytest-test'].result == 'success' || (needs['pytest-test'].result == 'skipped' && inputs.run_pytest == false)) }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
     permissions:
@@ -449,10 +392,9 @@ jobs:
   pip-audit-scan:
     needs:
       - pre-commit-check
-      - ruff-lint
       - gitleaks-scan
       - pytest-test
-    if: ${{ inputs.run_pip_audit_scan && !cancelled() && (needs['pre-commit-check'].result == 'success' || needs['pre-commit-check'].result == 'skipped') && (needs['ruff-lint'].result == 'success' || needs['ruff-lint'].result == 'skipped') && (needs['gitleaks-scan'].result == 'success' || (needs['gitleaks-scan'].result == 'skipped' && inputs.run_gitleaks == false)) && (needs['pytest-test'].result == 'success' || (needs['pytest-test'].result == 'skipped' && inputs.run_pytest == false)) }}
+    if: ${{ inputs.run_pip_audit_scan && !cancelled() && (needs['pre-commit-check'].result == 'success' || needs['pre-commit-check'].result == 'skipped') && (needs['gitleaks-scan'].result == 'success' || (needs['gitleaks-scan'].result == 'skipped' && inputs.run_gitleaks == false)) && (needs['pytest-test'].result == 'success' || (needs['pytest-test'].result == 'skipped' && inputs.run_pytest == false)) }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
 
@@ -540,13 +482,12 @@ jobs:
   docker-build:
     needs:
       - pre-commit-check
-      - ruff-lint
       - pytest-test
       - gitleaks-scan
       - trivy-repo-scan
       - bandit-scan
       - pip-audit-scan
-    if: ${{ inputs.run_docker_build && !cancelled() && (needs['pre-commit-check'].result == 'success' || needs['pre-commit-check'].result == 'skipped') && (needs['ruff-lint'].result == 'success' || needs['ruff-lint'].result == 'skipped') && (needs['gitleaks-scan'].result == 'success' || (needs['gitleaks-scan'].result == 'skipped' && inputs.run_gitleaks == false)) && (needs['pytest-test'].result == 'success' || (needs['pytest-test'].result == 'skipped' && inputs.run_pytest == false)) && (needs['trivy-repo-scan'].result == 'success' || (needs['trivy-repo-scan'].result == 'skipped' && inputs.run_trivy == false)) && (needs['bandit-scan'].result == 'success' || (needs['bandit-scan'].result == 'skipped' && inputs.run_bandit == false)) && (needs['pip-audit-scan'].result == 'success' || (needs['pip-audit-scan'].result == 'skipped' && inputs.run_pip_audit_scan == false)) }}
+    if: ${{ inputs.run_docker_build && !cancelled() && (needs['pre-commit-check'].result == 'success' || needs['pre-commit-check'].result == 'skipped') && (needs['gitleaks-scan'].result == 'success' || (needs['gitleaks-scan'].result == 'skipped' && inputs.run_gitleaks == false)) && (needs['pytest-test'].result == 'success' || (needs['pytest-test'].result == 'skipped' && inputs.run_pytest == false)) && (needs['trivy-repo-scan'].result == 'success' || (needs['trivy-repo-scan'].result == 'skipped' && inputs.run_trivy == false)) && (needs['bandit-scan'].result == 'success' || (needs['bandit-scan'].result == 'skipped' && inputs.run_bandit == false)) && (needs['pip-audit-scan'].result == 'success' || (needs['pip-audit-scan'].result == 'skipped' && inputs.run_pip_audit_scan == false)) }}
     runs-on: ubuntu-latest
     timeout-minutes: 45
 

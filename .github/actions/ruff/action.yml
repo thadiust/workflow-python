@@ -171,7 +171,7 @@ runs:
             {
               echo "## Ruff failed — fix locally"
               echo ""
-              echo "Use **Ruff ${{ inputs.ruff_version }}** (same as CI). **Commit** and **push** when checks pass."
+              echo "Use **Ruff ${{ inputs.ruff_version }}** (match **pre-commit** **ruff-pre-commit** **rev** if this repo uses **`ci.yml`**). **Commit** and **push** when checks pass."
               echo ""
             } >> "$GITHUB_STEP_SUMMARY"
             if [ "${{ inputs.working_directory }}" != "." ]; then

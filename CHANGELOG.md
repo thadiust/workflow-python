@@ -8,9 +8,9 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ### Added
 
-- **Pre-commit required:** **[`.pre-commit-config.yaml`](.pre-commit-config.yaml)** — **`pre-commit-hooks`** **v6.0.0** (whitespace, EOF, **`check-yaml`** with **`.github/workflows/`** excluded, JSON, merge conflicts, line endings, private keys, **`debug-statements`**) plus **Ruff** / **Gitleaks**; **no** Black (use **`ruff-format`**). CI: **[`ci.yml`](.github/workflows/ci.yml)** **`pre-commit-check`** job (**`pre-commit run --all-files`**) for every **`workflow_call`** caller; this repo also runs **[`.github/workflows/pre-commit.yml`](.github/workflows/pre-commit.yml)** on push/PR. README / **`MAINTAINERS.md`**: bump **Ruff** / **Gitleaks** **`rev:`** with **`ci.yml`**; **`pre-commit autoupdate`** for **pre-commit-hooks**.
+- **Pre-commit required:** **[`.pre-commit-config.yaml`](.pre-commit-config.yaml)** — **`pre-commit-hooks`** **v6.0.0** (whitespace, EOF, **`check-yaml`** with **`.github/workflows/`** excluded, JSON, merge conflicts, line endings, private keys, **`debug-statements`**) plus **Ruff** / **Gitleaks**; **no** Black (use **`ruff-format`**). CI: **[`ci.yml`](.github/workflows/ci.yml)** **`pre-commit-check`** job (**`pre-commit run --all-files`**) for every **`workflow_call`** caller; this repo also runs **[`.github/workflows/pre-commit.yml`](.github/workflows/pre-commit.yml)** on push/PR. README / **`MAINTAINERS.md`**: bump hook **`rev:`** (**Ruff** / **Gitleaks**) and align **Gitleaks** with **`gitleaks_version`** when desired; **`pre-commit autoupdate`** for **pre-commit-hooks**.
 - **[`COMPANY_RUNBOOK.md`](COMPANY_RUNBOOK.md):** severity-ranked **company rollout** checklist (fork / untrusted PR policy, Trivy unfixed defaults, app hash path, Dependency Review, Bandit vs enterprise SAST, Docker artifacts, **`pip_tools`** strict mode, runners). Linked from **`README`**, **`SECURITY`**, **`CI_RISK_REGISTER`**.
-- **[`python-pr-suite.yml`](.github/workflows/python-pr-suite.yml):** reusable **`workflow_call`** — **Dependency Review** ∥ **`ci.yml`**, forwarding a **wide** input set (Python, Ruff/pytest versions, scanner toggles, lockfile, Docker, SARIF, Trivy image gate — defaults match **`ci.yml`**). Callers needing **other** **`ci.yml`** inputs use a two-job workflow or extend the suite.
+- **[`python-pr-suite.yml`](.github/workflows/python-pr-suite.yml):** reusable **`workflow_call`** — **Dependency Review** ∥ **`ci.yml`**, forwarding a **wide** input set (Python, pre-commit/pytest versions, scanner toggles, lockfile, Docker, SARIF, Trivy image gate — defaults match **`ci.yml`**). Callers needing **other** **`ci.yml`** inputs use a two-job workflow or extend the suite.
 - **[`examples/consumer-pull-request-ci.yml`](examples/consumer-pull-request-ci.yml):** copy-paste consumer template using **`python-pr-suite.yml`**.
 - **[`scheduled-trivy-unfixed-report.yml`](.github/workflows/scheduled-trivy-unfixed-report.yml):** weekly **`dogfood/`** Trivy run with **`ignore_unfixed: false`**, **`fail_on_findings: false`**, optional SARIF upload (visibility without changing main gate default).
 - **`ci.yml` inputs:** **`pytest_app_require_hashes`**, **`pip_tools_require_hashed_install`** (enterprise strictness for app **`pip install -r`** and **pip-tools** version **7.5.3**).
@@ -19,8 +19,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ### Changed
 
-- **`ci.yml`:** default **`run_ruff`** is **`false`** (use **`.pre-commit-config.yaml`** + **`pre-commit-check`** for Ruff/format); optional standalone **Ruff** composite remains via **`run_ruff: true`**. Downstream jobs **`needs`** **`pre-commit-check`**.
-- **`python-pr-suite.yml`:** forwards **`run_pre_commit`** (default **`true`**); **`run_ruff`** default **`false`** (matches **`ci.yml`**); expanded forwarding for **PR/push parity** in typical apps (see workflow file). **`COMPANY_RUNBOOK.md`:** **Residual gaps (not oversights)** table. **`README`:** link to residual section.
+- **`ci.yml`:** removed **`ruff-lint`** job and **`run_ruff`** / **`ruff_*`** inputs — **Ruff** runs **only** inside **`pre-commit-check`** (`.pre-commit-config.yaml`). Downstream jobs no longer **`needs`** **`ruff-lint`**.
+- **`python-pr-suite.yml`:** forwards **`run_pre_commit`** (default **`true`**); no **`run_ruff`** / **`ruff_version`**. Expanded forwarding for **PR/push parity** in typical apps (see workflow file). **`COMPANY_RUNBOOK.md`:** **Residual gaps (not oversights)** table. **`README`:** link to residual section.
 - **`dogfood-ci.yml`** / **`scheduled-security-scan.yml`:** drop **`secrets: inherit`** when unused (defense in depth).
 - **`README.md`:** **SAST scope (Bandit)**; **`python-pr-suite`** + examples; **`scheduled-trivy-unfixed-report`**; **`COMPANY_RUNBOOK`** link; inputs table for new booleans; Dependency Review section prefers **`python-pr-suite`**.
 - **`MAINTAINERS.md`:** **`pip_tools_require_hashed_install`** note; **`COMPANY_RUNBOOK`** cross-link for enterprise **pip-tools** policy.
@@ -35,7 +35,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 ### Fixed
 
 - **Dogfood / Bandit:** **`sast-bandit`** now installs **`bandit[sarif]`** so **Code Scanning** SARIF works on PyPI **Bandit**; dogfood test uses **`# nosec B101`** for pytest **`assert`**.
-- **`run_pytest`** / **`run_gitleaks`** input descriptions and **`run_docker_build`** README row aligned with **`ci.yml`**: pytest after **Ruff** + **Gitleaks**; Gitleaks **parallel** with Ruff; Docker build waits on all six upstream jobs.
+- **`run_pytest`** / **`run_gitleaks`** input descriptions and **`run_docker_build`** README row aligned with **`ci.yml`**: pytest after **pre-commit** + **Gitleaks**; Gitleaks **parallel** with **pre-commit**; Docker build waits on all six upstream jobs.
 
 ### Changed
 

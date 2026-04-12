@@ -1,6 +1,6 @@
 # Required locally: pip install pre-commit && pre-commit install
 # Full tree (Cisco-style): pre-commit run --all-files
-# CI: .github/workflows/pre-commit.yml
+# CI: reusable ci.yml (pre-commit-check job) on every caller; this repo also runs .github/workflows/pre-commit.yml on push/PR.
 #
 # Formatting: Ruff replaces Black + isort here — do not add psf/black (would fight ruff-format).
 

@@ -30,10 +30,14 @@ on:
         required: false
         type: boolean
         default: true
-      run_ruff:
+      run_pre_commit:
         required: false
         type: boolean
         default: true
+      run_ruff:
+        required: false
+        type: boolean
+        default: false
       ruff_version:
         required: false
         type: string
@@ -97,6 +101,7 @@ jobs:
       pip_tools_requirements_in: ${{ inputs.pip_tools_requirements_in }}
       python_version: ${{ inputs.python_version }}
       fail_on_vuln: ${{ inputs.fail_on_vuln }}
+      run_pre_commit: ${{ inputs.run_pre_commit }}
       run_ruff: ${{ inputs.run_ruff }}
       ruff_version: ${{ inputs.ruff_version }}
       run_pytest: ${{ inputs.run_pytest }}

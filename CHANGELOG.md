@@ -8,7 +8,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ### Added
 
-- **Pre-commit required:** **[`.pre-commit-config.yaml`](.pre-commit-config.yaml)** — **`pre-commit-hooks`** **v6.0.0** (whitespace, EOF, **`check-yaml`** with **`.github/workflows/`** excluded, JSON, merge conflicts, line endings, private keys, **`debug-statements`**) plus **Ruff** / **Gitleaks**; **no** Black (use **`ruff-format`**). CI: **[`.github/workflows/pre-commit.yml`](.github/workflows/pre-commit.yml)**. README / **`MAINTAINERS.md`**: bump **Ruff** / **Gitleaks** **`rev:`** with **`ci.yml`**; **`pre-commit autoupdate`** for **pre-commit-hooks**.
+- **Pre-commit required:** **[`.pre-commit-config.yaml`](.pre-commit-config.yaml)** — **`pre-commit-hooks`** **v6.0.0** (whitespace, EOF, **`check-yaml`** with **`.github/workflows/`** excluded, JSON, merge conflicts, line endings, private keys, **`debug-statements`**) plus **Ruff** / **Gitleaks**; **no** Black (use **`ruff-format`**). CI: **[`ci.yml`](.github/workflows/ci.yml)** **`pre-commit-check`** job (**`pre-commit run --all-files`**) for every **`workflow_call`** caller; this repo also runs **[`.github/workflows/pre-commit.yml`](.github/workflows/pre-commit.yml)** on push/PR. README / **`MAINTAINERS.md`**: bump **Ruff** / **Gitleaks** **`rev:`** with **`ci.yml`**; **`pre-commit autoupdate`** for **pre-commit-hooks**.
 - **[`COMPANY_RUNBOOK.md`](COMPANY_RUNBOOK.md):** severity-ranked **company rollout** checklist (fork / untrusted PR policy, Trivy unfixed defaults, app hash path, Dependency Review, Bandit vs enterprise SAST, Docker artifacts, **`pip_tools`** strict mode, runners). Linked from **`README`**, **`SECURITY`**, **`CI_RISK_REGISTER`**.
 - **[`python-pr-suite.yml`](.github/workflows/python-pr-suite.yml):** reusable **`workflow_call`** — **Dependency Review** ∥ **`ci.yml`**, forwarding a **wide** input set (Python, Ruff/pytest versions, scanner toggles, lockfile, Docker, SARIF, Trivy image gate — defaults match **`ci.yml`**). Callers needing **other** **`ci.yml`** inputs use a two-job workflow or extend the suite.
 - **[`examples/consumer-pull-request-ci.yml`](examples/consumer-pull-request-ci.yml):** copy-paste consumer template using **`python-pr-suite.yml`**.
@@ -19,7 +19,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ### Changed
 
-- **`python-pr-suite.yml`:** expanded forwarding for **PR/push parity** in typical apps (see workflow file). **`COMPANY_RUNBOOK.md`:** **Residual gaps (not oversights)** table. **`README`:** link to residual section.
+- **`ci.yml`:** default **`run_ruff`** is **`false`** (use **`.pre-commit-config.yaml`** + **`pre-commit-check`** for Ruff/format); optional standalone **Ruff** composite remains via **`run_ruff: true`**. Downstream jobs **`needs`** **`pre-commit-check`**.
+- **`python-pr-suite.yml`:** forwards **`run_pre_commit`** (default **`true`**); **`run_ruff`** default **`false`** (matches **`ci.yml`**); expanded forwarding for **PR/push parity** in typical apps (see workflow file). **`COMPANY_RUNBOOK.md`:** **Residual gaps (not oversights)** table. **`README`:** link to residual section.
 - **`dogfood-ci.yml`** / **`scheduled-security-scan.yml`:** drop **`secrets: inherit`** when unused (defense in depth).
 - **`README.md`:** **SAST scope (Bandit)**; **`python-pr-suite`** + examples; **`scheduled-trivy-unfixed-report`**; **`COMPANY_RUNBOOK`** link; inputs table for new booleans; Dependency Review section prefers **`python-pr-suite`**.
 - **`MAINTAINERS.md`:** **`pip_tools_require_hashed_install`** note; **`COMPANY_RUNBOOK`** cross-link for enterprise **pip-tools** policy.

@@ -4,7 +4,7 @@
 
 **Frequency:** for constraint refresh, only when default version numbers or bundled pins change — not every commit.
 
-**Pre-commit:** **[`.pre-commit-config.yaml`](.pre-commit-config.yaml)** — bump **Ruff** / **Gitleaks** **`rev:`** when **`ci.yml`** **`ruff_version`** / **`gitleaks_version`** change; run **`pre-commit autoupdate`** for **`pre-commit/pre-commit-hooks`** (and review the diff).
+**Pre-commit:** **[`.pre-commit-config.yaml`](.pre-commit-config.yaml)** — bump **Ruff** / **Gitleaks** **`rev:`** when **`ci.yml`** **`ruff_version`** / **`gitleaks_version`** change; run **`pre-commit autoupdate`** for **`pre-commit/pre-commit-hooks`** (and review the diff). **`ci.yml`** **`pre-commit-check`** and **[`.github/workflows/pre-commit.yml`](.github/workflows/pre-commit.yml)** both run **`pre-commit run --all-files`**.
 
 ---
 

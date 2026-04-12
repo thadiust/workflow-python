@@ -1,4 +1,4 @@
-# Enforces .pre-commit-config.yaml on every push/PR (same as pre-commit run --all-files locally).
+# This repo: every push/PR on main. Same hooks as `ci.yml` pre-commit-check (callers of the reusable workflow get that job automatically).
 name: pre-commit
 
 on:

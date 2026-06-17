@@ -49,7 +49,7 @@ on:
       pytest_version:
         required: false
         type: string
-        default: "9.0.2"
+        default: "9.0.3"
       run_pip_audit_scan:
         required: false
         type: boolean

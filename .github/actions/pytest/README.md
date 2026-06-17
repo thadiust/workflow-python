@@ -8,7 +8,7 @@ Local composite used by the reusable workflow [`ci.yml`](../../workflows/ci.yml)
 
 1. Sets up Python via `actions/setup-python`
 2. Installs dependencies from `requirements_file` with **`pip install -r`** (not **`--require-hashes`**) unless that file itself contains **PEP 503** hashes — a typical **`pip-compile`** lock **without** **`--generate-hashes`** is **version-pinned** but **not** hash-verified at install.
-3. Installs **`pytest`** with **`pip --require-hashes`** when **`constraints/pytest-<version>.txt`** exists for **`pytest_version`** (default **9.0.2**); otherwise **`pip install pytest==…`** with a warning. Regenerate constraints via **`scripts/refresh-pip-constraints.sh`** in **`workflow-python`** after bumps.
+3. Installs **`pytest`** with **`pip --require-hashes`** when **`constraints/pytest-<version>.txt`** exists for **`pytest_version`** (default **9.0.3**); otherwise **`pip install pytest==…`** with a warning. Regenerate constraints via **`scripts/refresh-pip-constraints.sh`** in **`workflow-python`** after bumps.
 4. Runs `python -m pytest` with `pytest_args`
 
 On failure, it writes a short **Job Summary** with copy-paste commands.
@@ -22,5 +22,5 @@ On failure, it writes a short **Job Summary** with copy-paste commands.
 | `requirements_file` | `requirements.txt` | Relative to `working_directory`. |
 | `extra_install_args` | *(empty)* | Extra args passed to `pip install -r ...` (space-separated). |
 | `app_requirements_require_hashes` | `false` | If **`true`**, app **`pip install -r`** uses **`--require-hashes`** (requirements file must include PEP 503 hashes). |
-| `pytest_version` | `9.0.2` | Exact pytest version string. |
+| `pytest_version` | `9.0.3` | Exact pytest version string. |
 | `pytest_args` | *(empty)* | Space-separated args; **empty** = auto (`tests/` or `test/` or discovery). |

@@ -19,6 +19,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ### Changed
 
+- **Default `pytest_version`:** **`9.0.3`** (was **`9.0.2`**) in **`ci.yml`**, **`python-pr-suite.yml`**, and the **pytest** composite; added **`constraints/pytest-9.0.3.txt`** for hash-pinned installs.
 - **`ci.yml`:** **`gitleaks-scan`** (**`secrets-gitleaks`**, **`fetch-depth: 0`**, SARIF when **`upload_code_scanning`**) runs **in parallel** with **`pre-commit-check`**; **`run_gitleaks`** (default **`true`**) and **`gitleaks_version`** inputs. **Pre-commit** still runs the **Gitleaks** hook when **`run_pre_commit`** is on — set **`run_gitleaks: false`** to skip only the CI job. **`pytest-test`** uses **`always()`** **`if`** so it still runs when **`run_gitleaks`** is **`false`** (skipped dependent job). **`python-pr-suite.yml`** forwards **`run_gitleaks`**.
 - **actionlint** runs via **`rhysd/actionlint`** pre-commit hook inside **`pre-commit-check`** (not a separate workflow). **`workflow-python`:** removed **[`.github/workflows/actionlint.yml`](.github/workflows/actionlint.yml)**; composite **`action.yml`** syntax check is **`scripts/validate_composite_actions_yaml.py`** + local pre-commit hook. **`sample-python-app`:** removed standalone **`actionlint.yml`** (hook in **`.pre-commit-config.yaml`** only).
 - **`ci.yml`:** removed **`ruff-lint`** job and **`run_ruff`** / **`ruff_*`** inputs — **Ruff** runs **only** inside **`pre-commit-check`** (`.pre-commit-config.yaml`). Downstream jobs no longer **`needs`** **`ruff-lint`**.

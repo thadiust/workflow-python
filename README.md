@@ -116,7 +116,7 @@ All inputs are optional; defaults assume `requirements.txt` at the repository ro
 | `gitleaks_version` | string | `8.18.4` | Exact **Gitleaks** release (**`secrets-gitleaks`**); align **`.pre-commit-config.yaml`** hook **`rev:`** when desired. |
 | `run_pytest` | boolean | `true` | If `false`, the pytest job is skipped. |
 | `pytest_requirements_file` | string | `requirements.txt` | Requirements file (relative to `working_directory`) for installing app deps before pytest. |
-| `pytest_version` | string | `9.0.2` | Exact pytest version installed in the test job (match **`requirements.txt`** or override). |
+| `pytest_version` | string | `9.0.3` | Exact pytest version installed in the test job (match **`requirements.txt`** or override). |
 | `pytest_args` | string | *(empty)* | Omit for auto: `-q tests` if `./tests` exists, else `-q test` if `./test` exists, else `-q`. Override with e.g. `-q .` or `-q mypkg/tests`. |
 | `pytest_app_require_hashes` | boolean | `false` | If **`true`**, **`pip install -r pytest_requirements_file`** uses **`--require-hashes`** (file must include **PEP 503** hashes). |
 | `run_trivy` | boolean | `true` | If `false`, the Trivy job is skipped. |
@@ -172,7 +172,7 @@ jobs:
       # run_pre_commit: true   # default; requires .pre-commit-config.yaml at repo root (includes Ruff)
       # run_gitleaks: true     # default; full-history detect + SARIF; false = hook only in pre-commit
       run_pytest: true
-      pytest_version: "9.0.2"
+      pytest_version: "9.0.3"
       pytest_requirements_file: "requirements.txt"
       run_pip_audit_scan: true
       run_bandit: true

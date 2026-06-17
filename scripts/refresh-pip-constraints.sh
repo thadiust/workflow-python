@@ -20,7 +20,7 @@ mk() {
 mk "ruff==0.15.9" "$ROOT/.github/actions/ruff/constraints/ruff-0.15.9.txt"
 
 # pytest + runtime deps
-mk "pytest==9.0.2" "$ROOT/.github/actions/pytest/constraints/pytest-9.0.2.txt"
+mk "pytest==9.0.3" "$ROOT/.github/actions/pytest/constraints/pytest-9.0.3.txt"
 
 # pip-tools lock enforcement (includes pip/setuptools via --allow-unsafe)
 echo "pip-tools==7.5.3" > /tmp/pt.in

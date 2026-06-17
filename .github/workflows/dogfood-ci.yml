@@ -29,7 +29,9 @@ permissions:
   pull-requests: read
 
 jobs:
+  # Push / dispatch: one full ci.yml run including Docker + Trivy image.
   full-pipeline:
+    if: github.event_name != 'pull_request'
     uses: ./.github/workflows/ci.yml
     with:
       working_directory: dogfood
@@ -38,6 +40,7 @@ jobs:
       trivy_image_fail_on_findings: false
       run_runner_info: false
 
+  # PRs only: exercise python-pr-suite.yml (dependency-review + ci.yml) without duplicating full-pipeline.
   pr-suite-smoke:
     if: github.event_name == 'pull_request'
     uses: ./.github/workflows/python-pr-suite.yml

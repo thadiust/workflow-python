@@ -308,8 +308,9 @@ jobs:
   trivy-repo-scan:
     needs:
       - pre-commit-check
+      - gitleaks-scan
       - pytest-test
-    if: ${{ inputs.run_trivy && !cancelled() && (needs['pre-commit-check'].result == 'success' || needs['pre-commit-check'].result == 'skipped') && (needs['pytest-test'].result == 'success' || (needs['pytest-test'].result == 'skipped' && inputs.run_pytest == false)) }}
+    if: ${{ inputs.run_trivy && !cancelled() && (needs['pre-commit-check'].result == 'success' || needs['pre-commit-check'].result == 'skipped') && (needs['gitleaks-scan'].result == 'success' || (needs['gitleaks-scan'].result == 'skipped' && inputs.run_gitleaks == false)) && (needs['pytest-test'].result == 'success' || (needs['pytest-test'].result == 'skipped' && inputs.run_pytest == false)) }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
     permissions:
@@ -349,8 +350,9 @@ jobs:
   bandit-scan:
     needs:
       - pre-commit-check
+      - gitleaks-scan
       - pytest-test
-    if: ${{ inputs.run_bandit && !cancelled() && (needs['pre-commit-check'].result == 'success' || needs['pre-commit-check'].result == 'skipped') && (needs['pytest-test'].result == 'success' || (needs['pytest-test'].result == 'skipped' && inputs.run_pytest == false)) }}
+    if: ${{ inputs.run_bandit && !cancelled() && (needs['pre-commit-check'].result == 'success' || needs['pre-commit-check'].result == 'skipped') && (needs['gitleaks-scan'].result == 'success' || (needs['gitleaks-scan'].result == 'skipped' && inputs.run_gitleaks == false)) && (needs['pytest-test'].result == 'success' || (needs['pytest-test'].result == 'skipped' && inputs.run_pytest == false)) }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
     permissions:
@@ -390,8 +392,9 @@ jobs:
   pip-audit-scan:
     needs:
       - pre-commit-check
+      - gitleaks-scan
       - pytest-test
-    if: ${{ inputs.run_pip_audit_scan && !cancelled() && (needs['pre-commit-check'].result == 'success' || needs['pre-commit-check'].result == 'skipped') && (needs['pytest-test'].result == 'success' || (needs['pytest-test'].result == 'skipped' && inputs.run_pytest == false)) }}
+    if: ${{ inputs.run_pip_audit_scan && !cancelled() && (needs['pre-commit-check'].result == 'success' || needs['pre-commit-check'].result == 'skipped') && (needs['gitleaks-scan'].result == 'success' || (needs['gitleaks-scan'].result == 'skipped' && inputs.run_gitleaks == false)) && (needs['pytest-test'].result == 'success' || (needs['pytest-test'].result == 'skipped' && inputs.run_pytest == false)) }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
 
@@ -479,11 +482,12 @@ jobs:
   docker-build:
     needs:
       - pre-commit-check
+      - gitleaks-scan
       - pytest-test
       - trivy-repo-scan
       - bandit-scan
       - pip-audit-scan
-    if: ${{ inputs.run_docker_build && !cancelled() && (needs['pre-commit-check'].result == 'success' || needs['pre-commit-check'].result == 'skipped') && (needs['pytest-test'].result == 'success' || (needs['pytest-test'].result == 'skipped' && inputs.run_pytest == false)) && (needs['trivy-repo-scan'].result == 'success' || (needs['trivy-repo-scan'].result == 'skipped' && inputs.run_trivy == false)) && (needs['bandit-scan'].result == 'success' || (needs['bandit-scan'].result == 'skipped' && inputs.run_bandit == false)) && (needs['pip-audit-scan'].result == 'success' || (needs['pip-audit-scan'].result == 'skipped' && inputs.run_pip_audit_scan == false)) }}
+    if: ${{ inputs.run_docker_build && !cancelled() && (needs['pre-commit-check'].result == 'success' || needs['pre-commit-check'].result == 'skipped') && (needs['gitleaks-scan'].result == 'success' || (needs['gitleaks-scan'].result == 'skipped' && inputs.run_gitleaks == false)) && (needs['pytest-test'].result == 'success' || (needs['pytest-test'].result == 'skipped' && inputs.run_pytest == false)) && (needs['trivy-repo-scan'].result == 'success' || (needs['trivy-repo-scan'].result == 'skipped' && inputs.run_trivy == false)) && (needs['bandit-scan'].result == 'success' || (needs['bandit-scan'].result == 'skipped' && inputs.run_bandit == false)) && (needs['pip-audit-scan'].result == 'success' || (needs['pip-audit-scan'].result == 'skipped' && inputs.run_pip_audit_scan == false)) }}
     runs-on: ubuntu-latest
     timeout-minutes: 45
 
